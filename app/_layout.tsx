@@ -1,7 +1,7 @@
 import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Appearance, Pressable, ScrollView, Text } from "react-native";
+import { Pressable, ScrollView, Text, useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppProvider, useApp } from "../src/app-state";
@@ -91,13 +91,12 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Pro
 export default function RootLayout() {
   const lastCrash = useLastCrash();
   const appearance = usePrefs((p) => p.appearance);
-  useEffect(() => {
-    const update = () => setTheme(appearance === "system" ? (Appearance.getColorScheme() === "light" ? "light" : "dark") : appearance);
-    update();
-    if (appearance !== "system") return;
-    const sub = Appearance.addChangeListener(update);
-    return () => sub.remove();
-  }, [appearance]);
+  // Resolve the theme during render, before any screen draws. setTheme mutates the shared tokens and
+  // is idempotent; useColorScheme re-renders on a system change, and the Stack key remounts screens so
+  // nothing keeps the previous palette. (Applying it in an effect left screens half-themed.)
+  const system = useColorScheme();
+  const mode = appearance === "system" ? (system === "dark" ? "dark" : "light") : appearance;
+  setTheme(mode);
   // Fonts are the platform's Roboto family (DS v0.2), so there is nothing to load first.
   if (lastCrash) return <CrashReport crash={lastCrash} />;
   return (
@@ -105,9 +104,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AppProvider>
         <NotificationTaps />
-        <StatusBar style={appearance === "light" || (appearance === "system" && Appearance.getColorScheme() === "light") ? "dark" : "light"} />
+        <StatusBar style={mode === "light" ? "dark" : "light"} />
         {/* Screens slide in from the right (native stack, UI thread); Home and modals keep their own. */}
-        <Stack key={`${appearance}-${colors.canvas}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas }, animation: "slide_from_right", animationDuration: 260 }}>
+        <Stack key={mode} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas }, animation: "slide_from_right", animationDuration: 260 }}>
           <Stack.Screen name="index" options={{ animation: "fade" }} />
           <Stack.Screen name="settings" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
         </Stack>

@@ -1,7 +1,7 @@
 // Per-bot settings: look, persona, model, toolsets, skills, and links to memory, MCP, plugins,
 // routines and older sessions. Live mode edits only what Hermes's HTTP API allows.
 import { router, useLocalSearchParams } from "expo-router";
-import { Activity, BellOff, Blocks, Brain, CalendarClock, History, KeyRound, MessageSquare, Phone, Plug, Trash2, Star } from "lucide-react-native";
+import { Activity, BellOff, Blocks, Brain, CalendarClock, Cpu, Database, History, KeyRound, MessageSquare, Phone, Plug, Trash2, Star, Wrench } from "lucide-react-native";
 import { setBotNotify, usePrefs } from "../../src/prefs";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -68,6 +68,11 @@ export default function BotInfo() {
         </View>
       </View>
       <Button arrow title={`Chat with ${bot.name}`} icon={<MessageSquare size={20} color={colors.onCoral} />} onPress={() => router.dismissTo(`/bot/${encodeURIComponent(bot.id)}`)} />
+      <Section>
+        <Row icon={<Cpu size={18} color={colors.text} />} title="Model" detail={bot.model ?? "Same as main"} />
+        <Row icon={<Wrench size={18} color={colors.text} />} title="Tools" detail={toolsets.data ? (toolsets.data.filter((t) => t.enabled).map((t) => t.label).join(", ") || "None") : toolsets.loading ? "Loading…" : "—"} />
+        <Row icon={<Database size={18} color={colors.text} />} title="Hermes profile" last detail={bot.profile} />
+      </Section>
       <Section footer="The main agent sits at the top of Home. You can also long-press any bot there.">
         <Row icon={<Star size={18} color={colors.coral} fill={primaryId === bot.id ? colors.coral : "transparent"} />} title="Main agent"
           detail={primaryId === bot.id ? "This bot is on top of Home" : "Show this bot on top of Home"} last

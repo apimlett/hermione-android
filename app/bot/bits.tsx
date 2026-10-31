@@ -136,7 +136,9 @@ export const Header = memo(function Header({ bot, top, onMenu }: { bot: Bot; top
   const status = moodLabel(mood, { reconnecting: useReconnecting(bot.id), approval: useHasApproval(bot.id) });
   const circle = { width: 48, height: 48, borderRadius: radii.inset, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.rule } as const;
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", top, left: 0, right: 0, zIndex: 2, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 2, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: top + 3, paddingBottom: 4,
+      // A solid band (DS: system bars stay legible), so the conversation scrolls under it, not through it.
+      backgroundColor: colors.canvas, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
       <Pressable hitSlop={8} accessibilityLabel="Back to bots" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={circle}><ChevronLeft size={24} color={colors.text} /></Pressable>
       <Pressable onPress={() => router.push(`/bot-info/${bot.id}`)} accessibilityLabel={`${bot.name} settings`} style={{ flexShrink: 1, flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, paddingLeft: 6, paddingRight: 16, borderRadius: radii.inset, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.rule }}>
         <Avatar bot={bot} size={32} mood={mood} badge={false} />

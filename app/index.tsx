@@ -1,14 +1,15 @@
 // Home (DS v0.2): HERMIONE masthead, search, the main agent, live run / approval metrics, what needs
 // attention, the team roster and the bottom navigation.
-import { Redirect, router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import Animated, { useAnimatedScrollHandler, useReducedMotion, useSharedValue } from "react-native-reanimated";
-import { Activity as ActivityIcon, ArrowRight, CalendarClock, CircleAlert, ChevronRight, Home as HomeIcon, LayoutGrid, Palette, Plus, Search, Settings, ShieldCheck, Star, UserRound, X } from "lucide-react-native";
+import { Activity as ActivityIcon, ArrowRight, CalendarClock, CircleAlert, ChevronRight, Ellipsis, Home as HomeIcon, LayoutGrid, Palette, Plus, Search, Settings, ShieldCheck, Star, UserRound, X } from "lucide-react-native";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Bot } from "../src/backend";
 import { useActivity, useApp, useAttentionChats, useLastAt, useMood, usePreview, useTotalUnread, useUnread, useUnreadBots } from "../src/app-state";
-import { Avatar, BottomNav, Eyebrow, Metric, StatusChip, botStatus } from "../src/ui/kit";
+import { Avatar, BottomNav, Button, Eyebrow, Metric, StatusChip, botStatus } from "../src/ui/kit";
+import { Cover } from "../src/ui/cover";
 import { Skeleton } from "../src/ui/motion";
 import { selectAttentionItems } from "../src/ui/attention-items";
 import { AttentionCarousel } from "../src/ui/attention-carousel";
@@ -22,7 +23,7 @@ import { colors, font, layout, radii, type } from "../src/ui/theme";
 const open = (b: Bot) => router.push(`/bot/${encodeURIComponent(b.id)}`);
 
 export default function Home() {
-  const { ready, backend, bots, botsLoaded, botsError, demo, primaryId, setPrimary, reloadBots } = useApp();
+  const { ready, backend, bots, botsLoaded, botsError, demo, setDemo, primaryId, setPrimary, reloadBots } = useApp();
   const chats = useAttentionChats();
   const unread = useTotalUnread();
   const unreadIds = useUnreadBots();
@@ -68,10 +69,18 @@ export default function Home() {
   // Match the actionable approval selector: only the latest active streaming turn can be waiting.
   const approvalCount = attention.counts.approval;
   const activeRuns = Object.values(chats).filter((chat) => chat.busy).length;
+  // The local-time card alone isn't news: show the section only when something needs you.
+  const needsYou = attention.loading || attention.items.some((item) => item.kind !== "time");
   const openActivity = () => { if (primary) router.push(`/activity/${encodeURIComponent(primary.id)}`); };
 
-  if (!ready) return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
-  if (!backend) return <Redirect href="/settings" />;
+  // The DS cover: while the app loads (no extra delay), and on first run with the two ways in.
+  if (!ready) return <Cover />;
+  if (!backend) return (
+    <Cover>
+      <Button arrow title="Connect to Hermes" onPress={() => router.push("/settings")} />
+      <Button kind="secondary" title="Try the offline demo (sample bots)" onPress={() => setDemo(true)} />
+    </Cover>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: insets.top }}>
@@ -113,14 +122,14 @@ export default function Home() {
               <Metric value={approvalCount} label="Approvals" a11y={`${approvalCount} pending approvals`} icon={<ShieldCheck size={26} color={colors.coral} strokeWidth={1.75} />}
                 onPress={() => { const approval = attention.items.find((item) => item.kind === "approval"); if (approval) router.push(approval.destination.path as any); }} />
             </View>
-            <View style={{ gap: 4 }}>
+            {needsYou ? <View style={{ gap: 4 }}>
               <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
                 <Text accessibilityRole="header" style={[type.civic, { fontSize: 24, lineHeight: 28 }]}>Needs attention</Text>
                 <Eyebrow>{unread ? `${unread} unread` : "Live"}</Eyebrow>
               </View>
               <AttentionCarousel items={attention.items} bots={bots} loading={attention.loading} scrollY={scrollY} onSelectRing={toTop}
                 onOpen={(item) => { if (item.destination) router.push(item.destination.path as any); }} />
-            </View>
+            </View> : null}
           </> : null}
 
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: colors.text, paddingBottom: 6 }}>
@@ -178,7 +187,7 @@ const square = { width: 48, height: 48, borderRadius: 4, alignItems: "center", j
 
 /** DS HeroAgent: the main (primary) bot at the top of Home, the main route to its chat. */
 function MainAgent({ bot, onLong }: { bot: Bot; onLong: (b: Bot) => void }) {
-  const mood = useMood(bot.id), doing = useActivity(bot.id), unread = useUnread(bot.id), preview = usePreview(bot.id);
+  const mood = useMood(bot.id), doing = useActivity(bot.id), unread = useUnread(bot.id);
   const st = botStatus(mood, { needsKey: bot.needsKey, doing });
   const label = unread && st.status === "ready" ? `${unread} unread` : st.label;
   return (
@@ -193,7 +202,6 @@ function MainAgent({ bot, onLong }: { bot: Bot; onLong: (b: Bot) => void }) {
         </View>
         <ArrowRight size={26} color={colors.coral} strokeWidth={1.75} />
       </View>
-      {preview || bot.description ? <Text numberOfLines={2} style={[type.bodySm, { color: colors.muted }]}>{preview || bot.description}</Text> : null}
     </Pressable>
   );
 }
@@ -219,7 +227,12 @@ const BotRow = memo(function BotRow({ bot, onLong, primary }: { bot: Bot; onLong
         <View accessibilityLabel={`${n} unread`} style={{ minWidth: 22, height: 22, borderRadius: 2, paddingHorizontal: 6, alignItems: "center", justifyContent: "center", backgroundColor: colors.coral }}>
           <Text style={{ color: colors.onCoral, fontFamily: font.display, fontWeight: "700", fontSize: 13, lineHeight: 16 }}>{n > 99 ? "99+" : n}</Text>
         </View>
-      ) : <ChevronRight size={20} color={colors.text} strokeWidth={1.75} />}
+      ) : null}
+      <Pressable onPress={() => onLong(bot)} accessibilityRole="button" accessibilityLabel={`More for ${bot.name}`} hitSlop={4}
+        style={({ pressed }) => ({ width: 44, height: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.inset, backgroundColor: pressed ? colors.surfaceAlt : "transparent" })}>
+        <Ellipsis size={20} color={colors.text} strokeWidth={1.75} />
+      </Pressable>
+      <ChevronRight size={20} color={colors.text} strokeWidth={1.75} />
     </Pressable>
   );
 });
