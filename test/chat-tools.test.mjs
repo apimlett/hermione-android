@@ -2,8 +2,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/chat-tools-entry.ts --bundle --format=esm --platform=node --outfile=/tmp/hm-test/chat-tools.js --log-level=error");
-const m = await import("/tmp/hm-test/chat-tools.js");
+execSync("./node_modules/.bin/esbuild test/chat-tools-entry.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-test/chat-tools.js --log-level=error");
+const m = await import("../node_modules/.cache/hm-test/chat-tools.js");
 
 const a = (over = {}) => ({ id: "a1", role: "assistant", text: "", steps: [], status: "streaming", ...over });
 

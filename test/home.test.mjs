@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/home-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-home/home.js --log-level=error");
+execSync("./node_modules/.bin/esbuild test/home-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-home/home.js --log-level=error");
 const { relTime, parseMessages } = await import("../node_modules/.cache/hm-home/home.js");
 
 test("relTime gives Grok-style compact times", () => {

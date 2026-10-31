@@ -133,7 +133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const flush = () => { scheduled = false; if (!queue.length) return; const q = queue; queue = []; patchChat(bot.id, (c) => ({ ...c, turns: applyStream(c.turns, aid, q, () => nextId("a")) })); };
       aborts.current[bot.id] = backend.chat(bot).streamTurn(sid, input, (a) => {
         if (ended) return;
-        if (a.type === "approval" && !appActive.current) void notifyApproval(bot, aid, a.approval);
+        if (a.type === "approval" && a.approval.kind !== "clarify" && !appActive.current) void notifyApproval(bot, aid, a.approval);
         if (a.type === "delta") acc += a.text;
         if (a.type === "final" && a.text) acc = a.text;
         if (a.type === "done") {
@@ -164,7 +164,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [backend, patchChat, runTurn]);
   const retry = useCallback(async (bot: Bot, turnId: string) => {
     const t = chats()[bot.id]?.turns.find((x): x is AssistantTurn => x.id === turnId && x.role === "assistant");
-    if ((!t?.prompt && !t?.attachments?.length) || t.status === "streaming" || chats()[bot.id]?.busy) return;
+    if ((!t?.prompt && !t?.attachments?.length) || t.status === "streaming" || t.status === "unknown" || t.errorCode === "unknown_execution" || chats()[bot.id]?.busy) return;
     patchTurn(bot.id, turnId, (x) => ({ ...initialTurn(turnId), at: x.at, prompt: x.prompt, attachments: x.attachments, key: retryReusesKey(x) && x.key ? x.key : newRunKey() }));
     await runTurn(bot, turnId);
   }, [patchTurn, runTurn]);
@@ -182,12 +182,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => sub?.remove();
   }, [bots, syncChat]);
   const awaitQueuedReply = useCallback((bot: Bot, aid: string) => waitForQueuedReply({ backend, bot, aid, chats, patchTurn, setPreview, cheer }), [backend, patchTurn, cheer]);
-  const stop = useCallback((bot: Bot) => {
+  const stop = useCallback(async (bot: Bot) => {
     const running = chats()[bot.id]?.turns.slice().reverse().find((t): t is AssistantTurn => t.role === "assistant" && t.status === "streaming" && !t.note);
-    if (running?.runId && backend) void backend.chat(bot).stop(running.runId).catch(() => {});
-    aborts.current[bot.id]?.();
-    if (running) patchTurn(bot.id, running.id, (t) => reduce(t, { type: "done", status: "cancelled" }));
-    patchChat(bot.id, (x) => ({ ...x, busy: false }));
+    if (!running) return;
+    try {
+      if (!running.runId || !backend) throw new Error("No run identity is available yet");
+      await backend.chat(bot).stop(running.runId);
+      // Acknowledgement means stopping, not cancelled. Keep observing the server's final status.
+      patchChat(bot.id, (x) => ({ ...x, error: undefined }));
+      patchTurn(bot.id, running.id, (t) => ({ ...t, controlError: undefined }));
+    } catch (e) {
+      const error = `Stop not confirmed: ${e instanceof Error ? e.message : String(e)}. Hermes may still be working; try Stop again.`;
+      patchChat(bot.id, (x) => ({ ...x, error }));
+      patchTurn(bot.id, running.id, (t) => ({ ...t, controlError: error }));
+    }
   }, [backend, patchChat, patchTurn]);
   const steer = useCallback(async (bot: Bot, text: string) => {
     const running = runningTurn(chats()[bot.id]?.turns ?? []);
@@ -195,11 +203,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await backend.chat(bot).steer(running.runId!, text);
     patchTurn(bot.id, running.id, (t) => (t.role === "assistant" ? { ...t, steers: [...(t.steers ?? []), text] } : t));
   }, [backend, patchTurn]);
-  const approve = useCallback(async (bot: Bot, turnId: string, choice: ApprovalChoice) => {
+  const approve = useCallback(async (bot: Bot, turnId: string, choice: string) => {
     const t = chats()[bot.id]?.turns.find((x): x is AssistantTurn => x.id === turnId && x.role === "assistant");
     if (!backend || !t?.approval?.runId) throw new Error("This approval can't be answered from the phone yet.");
-    await backend.chat(bot).approve(t.approval.runId, t.approval.requestId, t.approval.generation, choice);
-    patchTurn(bot.id, turnId, (x) => ({ ...x, approval: undefined }));
+    const submitted = t.approval;
+    const client = backend.chat(bot);
+    if (submitted.kind === "clarify") {
+      if (!client.clarify) throw new Error("This server can't accept clarification answers from the phone yet.");
+      await client.clarify(submitted.runId!, submitted.requestId, submitted.generation, choice);
+    } else {
+      if (!["once", "session", "always", "deny"].includes(choice)) throw new Error("Invalid approval choice");
+      await client.approve(submitted.runId!, submitted.requestId, submitted.generation, choice as ApprovalChoice);
+    }
+    patchTurn(bot.id, turnId, (x) => x.approval && x.approval.runId === submitted.runId
+      && x.approval.requestId === submitted.requestId
+      && x.approval.generation === submitted.generation
+      && x.approval.kind === submitted.kind ? { ...x, approval: undefined } : x);
   }, [backend, patchTurn]);
   const newChat = useCallback(async (bot: Bot) => { if (!backend?.newBotChat) throw new Error("Starting a new chat isn't available here."); if (chats()[bot.id]?.busy) throw new Error("Wait for this reply to finish, or /stop it first."); await backend.newBotChat(bot);
     await loadChat(bot, true); }, [backend, loadChat]);

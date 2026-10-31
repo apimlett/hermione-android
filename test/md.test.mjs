@@ -2,8 +2,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/md-entry.ts --bundle --format=esm --platform=node --outfile=/tmp/hm-test/md.js --log-level=error");
-const m = await import("/tmp/hm-test/md.js");
+execSync("./node_modules/.bin/esbuild test/md-entry.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-test/md.js --log-level=error");
+const m = await import("../node_modules/.cache/hm-test/md.js");
 
 test("paragraphs, headings, rules and fenced code", () => {
   const b = m.parse("# Title\n\nline one\nline two\n\n---\n```bash\nls -la\n```\n");

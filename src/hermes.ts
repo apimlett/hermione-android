@@ -25,6 +25,7 @@ export interface ChatClient {
   /** Add guidance to a run while it works (POST /v1/runs/{id}/steer). Rejects when the run no longer accepts it. */
   steer(runId: string, text: string): Promise<void>;
   approve(runId: string, requestId: string, executionGeneration: number, choice: ApprovalChoice): Promise<unknown>;
+  clarify?(runId: string, requestId: string, executionGeneration: number, answer: string): Promise<unknown>;
   stop(runId: string): Promise<unknown>;
 }
 
@@ -183,6 +184,12 @@ export class HermesClient implements ChatClient {
     return this.json(`/v1/runs/${encodeURIComponent(runId)}/approval`, {
       method: "POST",
       body: { request_id: requestId, execution_generation: executionGeneration, choice },
+    });
+  }
+
+  clarify(runId: string, requestId: string, executionGeneration: number, answer: string) {
+    return this.json(`/v1/runs/${encodeURIComponent(runId)}/clarify`, {
+      method: "POST", body: { request_id: requestId, execution_generation: executionGeneration, answer },
     });
   }
 

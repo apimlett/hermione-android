@@ -1,0 +1,44 @@
+import { chromium } from '@playwright/test';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+const output=new URL('../dist/verification/',import.meta.url);
+await mkdir(output,{recursive:true});
+const browser=await chromium.launch({headless:true});
+const context=await browser.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true,deviceScaleFactor:1});
+const page=await context.newPage();
+const errors=[];const external=[];
+page.on('pageerror',e=>errors.push(e.message));
+page.on('request',r=>{const u=new URL(r.url());if(['http:','https:'].includes(u.protocol)&&u.hostname!=='127.0.0.1')external.push(u.origin);});
+try {
+ await page.goto('http://127.0.0.1:9180/',{waitUntil:'networkidle'});
+ await page.getByText('Your team',{exact:true}).waitFor({timeout:30000});
+ await page.getByText('Offline preview · sample bots and messages',{exact:true}).waitFor({timeout:2000});
+ assert.equal(await page.getByRole('textbox',{name:'Search bots'}).count(),1);
+ const layout=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
+ assert.ok(layout.document<=layout.viewport+1,'Unexpected horizontal overflow');
+ await page.screenshot({path:new URL('home.png',output).pathname,fullPage:true});
+ console.log('HOME TEXT\n'+(await page.locator('body').innerText()).slice(0,10000));
+ console.log('BUTTONS',JSON.stringify(await page.getByRole('button').allTextContents()));
+ console.log('PASS: demo bot roster rendered at Android viewport with no horizontal overflow.');
+ await page.getByRole('button',{name:/Open chat with Atlas/}).first().click();
+ await page.getByRole('textbox',{name:'Ask Atlas'}).waitFor();
+ await page.getByRole('textbox',{name:'Ask Atlas'}).fill('What can you do?');
+ await page.getByRole('button',{name:'Send',exact:true}).click();
+ await page.getByText('What can you do?',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Send',exact:true}).waitFor({timeout:15000});
+ await page.screenshot({path:new URL('chat.png',output).pathname,fullPage:true});
+ console.log('PASS: offline sample chat accepted a message and completed its demo reply.');
+ await page.getByLabel('Chat menu',{exact:true}).click();
+ await page.getByText('Bot settings',{exact:true}).click();
+ await page.getByText('Routines',{exact:true}).click();
+ await page.getByText('Recurring jobs that report back to each bot',{exact:true}).waitFor();
+ await page.screenshot({path:new URL('routines.png',output).pathname,fullPage:true});
+ console.log('PASS: routines screen opened from the bot workspace.');
+ assert.deepEqual(errors,[],'Browser runtime errors');
+ assert.deepEqual(external,[],'Unexpected external requests in offline demo');
+ await writeFile(new URL('browser-results.json',output),JSON.stringify({checks:['demo roster visible','search present','no horizontal overflow','no browser runtime errors','no external HTTP requests'],layout,errors,external},null,2));
+} catch(e) {
+ console.error('UI FAILED',e.message,'PAGE ERRORS',JSON.stringify(errors));
+ console.error((await page.locator('body').innerText()).slice(0,10000));
+ throw e;
+} finally {await context.close();await browser.close();}

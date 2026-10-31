@@ -2,12 +2,15 @@
 export type Step = { id: string; tool: string; status: "running" | "completed" | "failed"; preview?: string; result?: string };
 /** Hermes /v1/runs/{id}/approval choices ("session"/"always" are refused in shared rooms). */
 export type ApprovalChoice = "once" | "session" | "always" | "deny";
-export type Approval = { runId?: string; requestId: string; generation: number; title: string; detail?: string };
+export type Approval = { runId?: string; requestId: string; generation: number; title: string; detail?: string;
+  kind?: "clarify"; choices?: string[]; multiSelect?: boolean };
 // "queued": the profile's Bot Chat is busy in another client; the reply lands in the history later.
-export type TurnStatus = "streaming" | "completed" | "failed" | "cancelled" | "queued";
+export type TurnStatus = "streaming" | "completed" | "failed" | "cancelled" | "queued" | "unknown";
 export type AssistantTurn = {
   id: string; role: "assistant"; text: string; steps: Step[]; status: TurnStatus;
   runId?: string; approval?: Approval; error?: string; errorCode?: string;
+  /** A failed control request does not change the execution's status. */
+  controlError?: string;
   /** ms since epoch, for date dividers and the long-press time. */
   at?: number;
   /** Trustworthy local start time for this run; unlike `at`, this is safe for elapsed time. */
@@ -165,6 +168,12 @@ export function toAction(event: string, raw: string): TurnAction[] {
   else if (/^tool\.(started|completed|failed)$/.test(event))
     out.push({ type: "tool", phase: event === "tool.completed" && d?.error === true ? "failed" : event.slice(5) as any,
       tool: s("tool_name", "tool", "name") ?? "tool", preview: s("preview") });
+  else if (event === "clarify.request") {
+    const requestId = s("request_id", "prompt_id", "id");
+    if (requestId) out.push({ type: "approval", approval: { runId, requestId,
+      generation: Number(d?.execution_generation ?? 0), kind: "clarify", title: s("question") ?? "Answer needed",
+      choices: Array.isArray(d?.choices) ? d.choices.filter((c: unknown) => typeof c === "string") : [], multiSelect: d?.multi_select === true } });
+  }
   else if (event.startsWith("approval.request")) {
     const requestId = s("request_id", "prompt_id", "id");
     if (requestId)
@@ -174,7 +183,8 @@ export function toAction(event: string, raw: string): TurnAction[] {
     // /v1/runs: run.completed carries the final `output` (authoritative over the streamed deltas).
     if (event === "run.completed" && s("output")) out.push({ type: "final", text: s("output")! });
     out.push({ type: "done", status: event.slice(4) as any, error: s("error", "turn_exit_reason"), ...(s("pending_steer") ? { pendingSteer: s("pending_steer") } : {}) });
-  } else if (event === "run.interrupted") out.push({ type: "done", status: "failed", error: s("error", "reason") ?? "the run was interrupted", code: "interrupted" });
+  } else if (event === "run.unknown") out.push({ type: "done", status: "unknown", code: "unknown_execution", error: "Recovery required: execution outcome is unknown. Resolve this run on Hermes before retrying; it may already have performed work." });
+  else if (event === "run.interrupted") out.push({ type: "done", status: "failed", error: s("error", "reason") ?? "the run was interrupted", code: "interrupted" });
   else if (event === "run.queued") out.push({ type: "done", status: "queued" });
   else if (event === "error") out.push({ type: "done", status: "failed", error: s("message", "error") ?? "the run failed", code: s("code") });
   return out;

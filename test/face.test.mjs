@@ -3,8 +3,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/face-entry.ts --bundle --format=esm --platform=node --outfile=/tmp/hm-test/face-state.js --log-level=error");
-const m = await import("/tmp/hm-test/face-state.js");
+execSync("./node_modules/.bin/esbuild test/face-entry.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-test/face-state.js --log-level=error");
+const m = await import("../node_modules/.cache/hm-test/face-state.js");
 
 const user = { id: "u1", role: "user", text: "hi" };
 const reply = (o = {}) => ({ id: "a1", role: "assistant", text: "", steps: [], status: "streaming", ...o });

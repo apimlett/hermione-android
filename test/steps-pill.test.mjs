@@ -3,8 +3,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/steps-pill-entry.ts --bundle --format=esm --platform=node --outfile=/tmp/hm-test/steps-pill.js --log-level=error");
-const m = await import("/tmp/hm-test/steps-pill.js");
+execSync("./node_modules/.bin/esbuild test/steps-pill-entry.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-test/steps-pill.js --log-level=error");
+const m = await import("../node_modules/.cache/hm-test/steps-pill.js");
 
 const history = { data: [
   { role: "user", content: "check the repo", timestamp: 1761400000 },

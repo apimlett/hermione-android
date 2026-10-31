@@ -1,5 +1,6 @@
 // Connection settings live in the Android Keystore-backed SecureStore. Nothing is hardcoded.
 import * as SecureStore from "./secure";
+import { validatePocConnection } from "./poc-policy";
 
 export type HermesConfig = {
   baseUrl: string;        // e.g. https://your-host.<tailnet>.ts.net (no trailing slash)
@@ -28,12 +29,13 @@ export function bridgeTarget(cfg: HermesConfig): { url: string; key: string } | 
 }
 
 export async function loadConfig(): Promise<HermesConfig | null> {
+  if (SecureStore.liveConnectionError) return null;
   const entries = await Promise.all(
     (Object.keys(KEYS) as (keyof HermesConfig)[]).map(async (k) => [k, await SecureStore.getItem(KEYS[k])] as const)
   );
   const cfg = Object.fromEntries(entries) as Record<keyof HermesConfig, string | null>;
   if (!cfg.baseUrl || !cfg.apiKey) return null;
-  return {
+  const loaded: HermesConfig = {
     baseUrl: cfg.baseUrl,
     apiKey: cfg.apiKey,
     cfClientId: cfg.cfClientId ?? "",
@@ -41,9 +43,13 @@ export async function loadConfig(): Promise<HermesConfig | null> {
     bridgeUrl: cfg.bridgeUrl ?? "",
     bridgeKey: cfg.bridgeKey ?? "",
   };
+  return validatePocConnection(loaded) || !loaded.apiKey.trim() ? null : loaded;
 }
 
 export async function saveConfig(cfg: HermesConfig): Promise<void> {
+  const error = validatePocConnection(cfg) ?? SecureStore.liveConnectionError;
+  if (error) throw new Error(error);
+  if (!cfg.apiKey.trim()) throw new Error("Enter the Hermes API key (not the webapp password).");
   for (const k of Object.keys(KEYS) as (keyof HermesConfig)[]) {
     await SecureStore.setItem(KEYS[k], (cfg[k] ?? "").trim());
   }

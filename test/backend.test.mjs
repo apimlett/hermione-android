@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 src/demo-backend.ts --bundle --format=esm --platform=node --outfile=/tmp/hm-test/demo.js --log-level=error");
-const { DemoBackend } = await import("/tmp/hm-test/demo.js");
+execSync("./node_modules/.bin/esbuild src/demo-backend.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-test/demo.js --log-level=error");
+const { DemoBackend } = await import("../node_modules/.cache/hm-test/demo.js");
 
 test("demo roster has playful seeded bots with one Bot Chat each", async () => {
   const be = new DemoBackend();
@@ -49,8 +49,8 @@ test("demo chat streams steps then text, and approvals resolve locally", async (
 });
 
 test("face personality is deterministic and differs between the seeded bots", async () => {
-  execSync("npx -y esbuild@0.24.0 src/ui/face-personality.ts --format=esm --outfile=/tmp/hm-test/face.js --log-level=error");
-  const { personality } = await import("/tmp/hm-test/face.js");
+  execSync("./node_modules/.bin/esbuild src/ui/face-personality.ts --format=esm --outfile=node_modules/.cache/hm-test/face.js --log-level=error");
+  const { personality } = await import("../node_modules/.cache/hm-test/face.js");
   assert.deepStrictEqual(personality("forge"), personality("forge"));
   const keys = ["atlas", "forge", "nova"].map((id) => JSON.stringify(personality(id)));
   assert.strictEqual(new Set(keys).size, 3);
@@ -61,8 +61,8 @@ test("face personality is deterministic and differs between the seeded bots", as
 });
 
 test("appearance: every shape is a closed path that holds the face; contrast flips on light tiles", async () => {
-  execSync("npx -y esbuild@0.24.0 src/appearance.ts --format=esm --outfile=/tmp/hm-test/appearance.js --log-level=error");
-  const A = await import("/tmp/hm-test/appearance.js");
+  execSync("./node_modules/.bin/esbuild src/appearance.ts --format=esm --outfile=node_modules/.cache/hm-test/appearance.js --log-level=error");
+  const A = await import("../node_modules/.cache/hm-test/appearance.js");
   assert.ok(A.SHAPES.length >= 6 && A.PALETTE.length >= 10);
   for (const sh of A.SHAPES) {
     const d = A.shapePath(sh);
@@ -87,7 +87,7 @@ test("appearance persists: demo store keeps it, live keeps it on the phone per p
   const b2 = await be.createBot({ name: "Cloudy", emoji: "🌿", color: "#8cc8ff", color2: "#1d6670", shape: "cloud", eyes: "tall", description: "", persona: "", toolsets: [] });
   assert.deepStrictEqual([b2.shape, b2.color2, b2.eyes], ["cloud", "#1d6670", "tall"]);
 
-  const A = await import("/tmp/hm-test/appearance.js");
+  const A = await import("../node_modules/.cache/hm-test/appearance.js");
   const mem = new Map(); const kv = { getItem: async (k) => mem.get(k) ?? null, setItem: async (k, v) => void mem.set(k, v) };
   const bot = { id: "coder", profile: "coder", name: "Coder", emoji: "🐙", color: "#2a3f5c", description: "" };
   assert.deepStrictEqual(await A.withLook(kv, bot), bot, "no saved look = unchanged");
@@ -98,7 +98,7 @@ test("appearance persists: demo store keeps it, live keeps it on the phone per p
 });
 
 test("selector store notifies only on change, and the high-refresh plugin patches MainActivity once", async () => {
-  execSync("npx -y esbuild@0.24.0 src/store.ts --format=esm --outfile=node_modules/.cache/hm-test/store.mjs --log-level=error");
+  execSync("./node_modules/.bin/esbuild src/store.ts --format=esm --outfile=node_modules/.cache/hm-test/store.mjs --log-level=error");
   const { createStore } = await import("../node_modules/.cache/hm-test/store.mjs");
   const s = createStore({ a: 1, b: { n: 0 } });
   let calls = 0; s.subscribe(() => calls++);

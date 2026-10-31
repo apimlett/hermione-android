@@ -30,6 +30,11 @@ const BRIDGE_FEATURES: BridgeFeature[] = ["createBot", "editPersona", "toggleToo
 export const PROFILE_ID_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 export const profileIdFrom = (name: string) =>
   name.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "-").replace(/^[-_]+|[-_]+$/g, "").slice(0, 64);
+/** Newly created phone bots stay in the server-authorized mobile namespace. */
+export const mobileProfileIdFrom = (name: string) => {
+  const id = profileIdFrom(name);
+  return id ? (id.startsWith("mobile-") ? id : `mobile-${id}`).slice(0, 64) : "";
+};
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 const pretty = (id: string) => id.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const errText = (e: unknown) => String((e as any)?.message ?? e);
@@ -85,7 +90,7 @@ export class LiveBackend implements Backend {
    *  then set the starter toolsets (best effort; the profile exists either way). */
   async createBot(n: NewBot): Promise<Bot> {
     const bridge = this.need("createBot");
-    const id = profileIdFrom(n.profile || n.name);
+    const id = mobileProfileIdFrom(n.profile || n.name);
     if (!PROFILE_ID_RE.test(id) || id === "default") throw new Error("Give the bot a name with letters or digits (its Hermes profile id is made from it).");
     const r = await bridge.createProfile({ name: id, description: n.description.trim() || undefined, soul: n.persona?.trim() || undefined, model: n.model, provider: n.provider });
     const bot: Bot = { id, profile: id, name: n.name.trim() || pretty(id), emoji: n.emoji, color: n.color, color2: n.color2, shape: n.shape, eyes: n.eyes,

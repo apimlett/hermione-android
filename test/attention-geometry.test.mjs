@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execSync } from "node:child_process";
 
-execSync("npx -y esbuild@0.24.0 test/attention-geometry-entry.ts --bundle --platform=node --format=esm --outfile=/tmp/hm-test/attention-geometry.js --log-level=error");
-const m = await import("/tmp/hm-test/attention-geometry.js");
+execSync("./node_modules/.bin/esbuild test/attention-geometry-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-test/attention-geometry.js --log-level=error");
+const m = await import("../node_modules/.cache/hm-test/attention-geometry.js");
 
 test("carousel widths fit narrow viewports and keep an ordered gap across fractional drags", () => {
   for (const viewport of [240, 320, 390, 768]) {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 src/hermes.ts --bundle --platform=node --format=esm --alias:expo/fetch=./test/fetch-shim.mjs --outfile=node_modules/.cache/hm-client/hermes.js --log-level=error");
+execSync("./node_modules/.bin/esbuild src/hermes.ts --bundle --platform=node --format=esm --alias:expo/fetch=./test/fetch-shim.mjs --outfile=node_modules/.cache/hm-client/hermes.js --log-level=error");
 const { HermesClient } = await import("../node_modules/.cache/hm-client/hermes.js");
 
 async function headersFor(cfg) {

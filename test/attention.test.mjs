@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/attention-entry.ts --bundle --platform=node --format=esm --outfile=/tmp/hm-test/attention.js --log-level=error");
-const m = await import("/tmp/hm-test/attention.js");
+execSync("./node_modules/.bin/esbuild test/attention-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-test/attention.js --log-level=error");
+const m = await import("../node_modules/.cache/hm-test/attention.js");
 
 const turn = (id, extra = {}) => ({ id, role: "assistant", text: "", steps: [], status: "streaming", ...extra });
 const chat = (turns, extra = {}) => ({ busy: false, loaded: true, turns, ...extra });

@@ -2,8 +2,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/v080-entry.ts --bundle --format=esm --platform=node --outfile=/tmp/hm-test/v080.js --log-level=error");
-const m = await import("/tmp/hm-test/v080.js");
+execSync("./node_modules/.bin/esbuild test/v080-entry.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-test/v080.js --log-level=error");
+const m = await import("../node_modules/.cache/hm-test/v080.js");
 
 const NOW = new Date(2026, 9, 25, 13, 0).getTime(); // Sun Oct 25 2026, 1 PM local
 const at = (y, mo, d, h = 9) => new Date(y, mo, d, h).getTime();

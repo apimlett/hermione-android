@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 src/sse.ts src/chat-model.ts --format=esm --outdir=/tmp/hm-test --log-level=error");
-const { SseParser } = await import("/tmp/hm-test/sse.js");
-const m = await import("/tmp/hm-test/chat-model.js");
+execSync("./node_modules/.bin/esbuild src/sse.ts src/chat-model.ts --format=esm --outdir=node_modules/.cache/hm-test --log-level=error");
+const { SseParser } = await import("../node_modules/.cache/hm-test/sse.js");
+const m = await import("../node_modules/.cache/hm-test/chat-model.js");
 const { reduce, initialTurn, toAction, applyStream } = m;
 
 test("sse parser handles keepalive, split chunks, CRLF", () => {

@@ -6,7 +6,7 @@ import assert from "node:assert";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-execSync("npx -y esbuild@0.24.0 src/chat-follow.ts --format=esm --outfile=node_modules/.cache/hm-follow/f.mjs --log-level=error");
+execSync("./node_modules/.bin/esbuild src/chat-follow.ts --format=esm --outfile=node_modules/.cache/hm-follow/f.mjs --log-level=error");
 const { ChatFollow, AT_BOTTOM, SETTLE_MS } = await import("../node_modules/.cache/hm-follow/f.mjs");
 
 function setup() {

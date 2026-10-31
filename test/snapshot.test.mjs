@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/snapshot-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-snapshot/snapshot.js --log-level=error --alias:react=" + new URL("./stub-react.mjs", import.meta.url).pathname + " --alias:expo-secure-store=" + new URL("./stub-react.mjs", import.meta.url).pathname + " --alias:react-native=" + new URL("./stub-react.mjs", import.meta.url).pathname);
+execSync("./node_modules/.bin/esbuild test/snapshot-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-snapshot/snapshot.js --log-level=error --alias:react=" + new URL("./stub-react.mjs", import.meta.url).pathname + " --alias:expo-secure-store=" + new URL("./stub-react.mjs", import.meta.url).pathname + " --alias:react-native=" + new URL("./stub-react.mjs", import.meta.url).pathname);
 const { probeAll } = await import("../node_modules/.cache/hm-snapshot/snapshot.js");
 
 test("every store hook returns a stable snapshot across calls", () => {

@@ -86,6 +86,24 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
   const emit = (a: TurnAction) => { if (ended) return; if (a.type === "done") ended = true; o.onAction(a); };
   let currentRun: string | undefined;
   let nudging = false;
+  let controlsShown = "";
+  function unknown(st: any): boolean {
+    if (st?.status !== "unknown") return false;
+    emit({ type: "done", status: "unknown", code: "unknown_execution", error: "Recovery required: Hermes lost track of this execution. It may have performed work. Resolve the unknown run on Hermes before sending more work; do not retry it blindly." });
+    outer.abort(); wake?.();
+    return true;
+  }
+  function restoreControls(runId: string, st: any) {
+    const controls = Array.isArray(st.pending_controls) ? st.pending_controls
+      : st.approval && typeof st.approval === "object" ? [{ kind: "approval", ...st.approval }] : [];
+    const raw = JSON.stringify(controls);
+    if (raw === controlsShown) return;
+    controlsShown = raw;
+    for (const control of controls) {
+      if (control?.kind === "approval" || control?.kind === "clarify")
+        toAction(`${control.kind}.request`, JSON.stringify({ run_id: runId, ...control })).forEach(emit);
+    }
+  }
 
   // "Reconnecting" is debounced: trouble must persist reconnectDelayMs (and the app must be in the
   // foreground) before the turn shows it; recovering earlier shows nothing at all.
@@ -121,8 +139,10 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
         }
         if (transientStatus(res.status)) throw new Retryable(`HTTP ${res.status}`);
         if (!res.ok) throw toHermesError(res.status, "/v1/runs", text);
-        const runId = JSON.parse(text)?.run_id;
+        const admission = JSON.parse(text);
+        const runId = admission?.run_id;
         if (typeof runId !== "string") throw new HermesError(res.status, "/v1/runs", undefined, "no run_id in response");
+        if (admission.status === "unknown") { emit({ type: "run", runId }); unknown(admission); }
         return runId;
       } catch (e) {
         if (outer.signal.aborted || e instanceof HermesError || e instanceof NoRunsApi) throw e;
@@ -140,6 +160,7 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
     let lastSeq = -1;
     let failures = 0;
     let emptyCloses = 0;
+    let reconnect = false;
     while (!outer.signal.aborted) {
       const ctl = new AbortController();
       inner = ctl;
@@ -156,6 +177,9 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
         if (transientStatus(res.status) || !res.body) throw new Retryable(`HTTP ${res.status}`);
         if (!res.ok) throw toHermesError(res.status, "/v1/runs/events", await res.text());
         setReconnecting(false);
+        if (reconnect) await probe(runId);
+        reconnect = true;
+        if (ended || outer.signal.aborted) return true;
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         const parser = new SseParser();
@@ -205,7 +229,7 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
   async function poll(runId: string): Promise<void> {
     const started = Date.now();
     let failures = 0;
-    let approvalShown = "";
+
     while (!outer.signal.aborted) {
       try {
         const res = await t.fetch(t.url(`/v1/runs/${encodeURIComponent(runId)}`), { signal: outer.signal, headers: t.headers() });
@@ -220,10 +244,8 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
         setReconnecting(false);
         const st = JSON.parse(text);
         const status = String(st?.status ?? "");
-        if (status === "waiting_for_approval" && st.approval && typeof st.approval === "object") {
-          const raw = JSON.stringify({ run_id: runId, ...st.approval });
-          if (raw !== approvalShown) { approvalShown = raw; toAction("approval.request", raw).forEach(o.onAction); }
-        }
+        if (unknown(st)) return;
+        restoreControls(runId, st);
         if (TERMINAL.has(status)) {
           if (status === "completed") {
             if (typeof st.output === "string" && st.output) emit({ type: "final", text: st.output });
@@ -262,6 +284,8 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
       if (outer.signal.aborted || ended) return;
       setReconnecting(false);
       const status = String(st?.status ?? "");
+      if (unknown(st)) return;
+      restoreControls(runId, st);
       if (status === "completed" && typeof st.output === "string" && st.output) {
         emit({ type: "final", text: st.output }); emit({ type: "done", status: "completed" }); outer.abort(); wake?.();
       } else if (status === "cancelled") { emit({ type: "done", status: "cancelled" }); outer.abort(); wake?.(); }
@@ -283,6 +307,7 @@ export function followRun(t: RunTarget, o: RunOptions): RunHandle {
   })().catch((e) => {
     if (outer.signal.aborted) return;
     if (e instanceof NoRunsApi) return o.onNoRunsApi();
+    if (e instanceof HermesError && e.code === "unknown_execution") { unknown({ status: "unknown" }); return; }
     if (e instanceof HermesError) return emit({ type: "done", status: "failed", error: e.detail, code: e.code ?? String(e.status) });
     emit({ type: "done", status: "failed", code: "connection_lost", error: `Couldn't reach Hermes (${e?.message ?? e})` });
   });

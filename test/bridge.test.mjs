@@ -11,7 +11,7 @@ import { existsSync } from "node:fs";
 
 const SRC = process.env.HERMES_BRIDGE_SRC ?? new URL("../../hermes-bridge", import.meta.url).pathname;
 const skip = !existsSync(`${SRC}/src/hermes_bridge/app.py`) && "hermes-bridge source not found next to the app";
-execSync("npx -y esbuild@0.24.0 src/live-backend.ts --bundle --platform=node --format=esm --alias:expo/fetch=./test/fetch-shim.mjs --alias:react-native=./test/rn-shim.mjs --alias:expo-secure-store=./test/rn-shim.mjs --outfile=node_modules/.cache/hm-live/live-bridge.js --log-level=error");
+execSync("./node_modules/.bin/esbuild src/live-backend.ts --bundle --platform=node --format=esm --alias:expo/fetch=./test/fetch-shim.mjs --alias:react-native=./test/native-storage-shim.mjs --alias:expo-secure-store=./test/native-storage-shim.mjs --outfile=node_modules/.cache/hm-live/live-bridge.js --log-level=error");
 const mem = new Map();
 globalThis.localStorage = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
 const { LiveBackend } = await import("../node_modules/.cache/hm-live/live-bridge.js");
@@ -80,13 +80,13 @@ test("Home lists every server profile; ones without a key on the phone need setu
 test("Add bot creates a real profile, keeps its new key, and chat uses it right away", { skip }, async () => {
   const be = new LiveBackend(cfg());
   const bot = await be.createBot({ name: "Chef Bot", emoji: "🍳", color: "#123", description: "Meal plans", persona: "Cheerful sous-chef", toolsets: ["web"] });
-  assert.strictEqual(bot.profile, "chef-bot");
+  assert.strictEqual(bot.profile, "mobile-chef-bot");
   assert.match(bot.apiKey, /^[0-9a-f]{64}$/);
-  const listed = (await be.listBots()).find((b) => b.profile === "chef-bot");
+  const listed = (await be.listBots()).find((b) => b.profile === "mobile-chef-bot");
   assert.ok(listed && !listed.needsKey && listed.apiKey === bot.apiKey && listed.name === "Chef Bot" && listed.emoji === "🍳");
   const sid = await be.botChatSession(listed);
   assert.ok(sid);
-  assert.ok(calls.some((c) => c.to === "hermes" && c.path.startsWith("/p/chef-bot/") && c.auth === `Bearer ${bot.apiKey}`));
+  assert.ok(calls.some((c) => c.to === "hermes" && c.path.startsWith("/p/mobile-chef-bot/") && c.auth === `Bearer ${bot.apiKey}`));
   await assert.rejects(be.createBot({ name: "Chef Bot", emoji: "x", color: "#000", description: "", toolsets: [] }), /already exists/);
   await assert.rejects(be.createBot({ name: "???", emoji: "x", color: "#000", description: "", toolsets: [] }), /letters or digits/);
   keysSeparate();

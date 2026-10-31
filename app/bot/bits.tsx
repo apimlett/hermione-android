@@ -54,7 +54,9 @@ export const TurnRow = memo(function TurnRow({ turn, bot, time, fresh, highlight
   const showStatus = usePrefs((p) => p.showStatus);
   const canRetry = !!t.prompt;
   const lost = t.errorCode === "connection_lost";
-  const note = t.status === "failed" ? (
+  const note = t.status === "unknown" ? (
+    <Text accessibilityRole="alert" style={[type.label, { color: colors.danger }]}>{t.error ?? "Recovery required: execution outcome is unknown. Resolve it on Hermes before retrying."}{t.runId ? ` Run: ${t.runId}` : ""}</Text>
+  ) : t.status === "failed" ? (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       {lost ? <WifiOff size={14} color={colors.muted} /> : <CircleAlert size={14} color={colors.danger} />}
       <Text style={[type.label, { color: lost ? colors.muted : colors.danger, flexShrink: 1 }]}>{lost ? "Couldn't reach Hermes to finish this reply." : `That didn't work: ${t.error ?? "the run failed"}`}</Text>
@@ -78,6 +80,7 @@ export const TurnRow = memo(function TurnRow({ turn, bot, time, fresh, highlight
         </SwipeQuote>
       ) : null}
       {reaction ? <ReactionBadge emoji={reaction} align="flex-start" onPress={() => react(turn.id, null)} /> : null}
+      {t.status === "streaming" && t.controlError ? <Text accessibilityRole="alert" style={[type.label, { color: colors.danger }]}>{t.controlError}</Text> : null}
       {note ? <View style={{ paddingLeft: 4 }}>{note}</View> : null}
       {time && t.status !== "streaming" ? <Text style={[type.label, { paddingLeft: 6, fontSize: 12, color: colors.dim }]}>{time}</Text> : null}
     </Rise>

@@ -4,8 +4,8 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 src/run-stream.ts --bundle --format=esm --platform=node --outfile=/tmp/hm-test/run-stream.js --log-level=error");
-const { followRun } = await import("/tmp/hm-test/run-stream.js");
+execSync("./node_modules/.bin/esbuild src/run-stream.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-test/run-stream.js --log-level=error");
+const { followRun } = await import("../node_modules/.cache/hm-test/run-stream.js");
 
 const enc = new TextEncoder();
 const SCRIPT = [
@@ -66,7 +66,10 @@ class FakeHermes {
           if (/^run\.(completed|failed|cancelled)$/.test(e.event)) { run.subs.delete(sub); ctl.enqueue(enc.encode(": stream closed\n\n")); ctl.close(); }
         },
       };
-      const body = new ReadableStream({ start: (c) => { ctl = c; c.enqueue(enc.encode(": open\n\n")); } });
+      const body = new ReadableStream({
+        start: (c) => { ctl = c; c.enqueue(enc.encode(": open\n\n")); },
+        cancel: () => { run.subs.delete(sub); },
+      });
       init.signal?.addEventListener("abort", () => { run.subs.delete(sub); try { ctl.error(Object.assign(new Error("aborted"), { name: "AbortError" })); } catch {} });
       queueMicrotask(() => { for (const e of run.events) if (e.seq > last) sub.send(e); if (run.status === "running") run.subs.add(sub); });
       return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });

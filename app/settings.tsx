@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BridgeClient } from "../src/bridge";
 import { bridgeTarget, type HermesConfig } from "../src/config";
 import { HermesClient } from "../src/hermes";
+import { validatePocConnection } from "../src/poc-policy";
+import { liveConnectionError } from "../src/secure";
 import { useApp } from "../src/app-state";
 import { Logo } from "../src/ui/logo";
 import { colors, font, radii, type } from "../src/ui/theme";
@@ -18,12 +20,12 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
 
   const [failed, setFailed] = useState(false);
-  // Cloudflare Access is only for a Cloudflare Tunnel setup; Tailscale Funnel needs just the key.
+  // The POC expects private Tailscale Serve; Cloudflare fields stay empty unless explicitly configured.
   const [cfOpen, setCfOpen] = useState(!!(config?.cfClientId || config?.cfClientSecret));
   const field = (k: keyof HermesConfig, label: string, opts: { secret?: boolean; placeholder: string; hint: string; url?: boolean }) => (
     <View style={{ gap: 6 }}>
       <Text style={[type.label, { color: colors.textSecondary }]}>{label}</Text>
-      <TextInput value={f[k]} onChangeText={(v) => setF({ ...f, [k]: v })} secureTextEntry={opts.secret} autoCapitalize="none" autoCorrect={false}
+      <TextInput value={f[k]} editable={!liveConnectionError} onChangeText={(v) => setF({ ...f, [k]: v })} secureTextEntry={opts.secret} autoCapitalize="none" autoCorrect={false}
         placeholder={opts.placeholder} keyboardType={opts.url ? "url" : "default"} accessibilityLabel={label}
         placeholderTextColor={colors.dim} style={{ backgroundColor: colors.control, color: colors.text, fontFamily: font.regular, fontSize: 15,
           borderRadius: radii.inset, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, paddingVertical: 12 }} />
@@ -38,6 +40,8 @@ export default function Settings() {
   });
   /** hermes-bridge is optional: a problem with it is reported, but the Hermes connection is still saved. */
   async function checkBridge(c: HermesConfig): Promise<string | null> {
+    const error = validatePocConnection(c) ?? liveConnectionError;
+    if (error) return error;
     const t = bridgeTarget(c);
     if (!t) return null;
     try {
@@ -49,17 +53,23 @@ export default function Settings() {
     /^403\b/.test(msg) ? (f.cfClientId ? "Cloudflare Access refused (403). Check the Access client ID and secret, and that the app's policy is Service Auth with this token." : "The server refused the request (403). If it sits behind Cloudflare Access, fill in the Cloudflare Access section.")
     : /^401\b/.test(msg) ? "Hermes refused the API key (401). Use the API_SERVER_KEY from your Hermes server."
     : /^404\b/.test(msg) ? "Reached a server, but not the Hermes API (404). Check the server URL."
-    : /network|fetch|failed to connect|unable to resolve/i.test(msg) ? `Can't reach the server (${msg}). Check the URL and that Funnel is on (tailscale funnel status on the server).`
+    : /network|fetch|failed to connect|unable to resolve/i.test(msg) ? `Can't reach the Hermes server (${msg}). Check Tailscale on your phone, the confirmed API endpoint, and Tailscale Serve on the server (tailscale serve status).`
     : msg;
-  async function saveOnly() { const c = normalized(); await save(c); router.replace("/"); }
+  async function saveOnly() {
+    const c = normalized();
+    const error = validatePocConnection(c) ?? liveConnectionError;
+    if (error || !c.apiKey) { setStatus({ ok: false, text: error || "Enter the Hermes API key (not the webapp password)." }); return; }
+    setBusy(true);
+    try { await save(c); router.replace("/"); }
+    catch (e: any) { setStatus({ ok: false, text: explain(String(e?.message ?? e)) }); }
+    finally { setBusy(false); }
+  }
 
   async function testAndSave() {
     setBusy(true); setStatus(null); setFailed(false);
     const c = normalized(); setF(c);
-    if (!c.baseUrl || !c.apiKey) { setStatus({ ok: false, text: "Fill in the server URL and the Hermes API key." }); setBusy(false); return; }
-    if (!/^https:\/\//i.test(c.baseUrl)) { setStatus({ ok: false, text: "Use an https:// address (your Cloudflare hostname)." }); setBusy(false); return; }
-    // The bridge key travels with every bridge call: never over plain http.
-    if (c.bridgeUrl?.trim() && !/^https:\/\//i.test(c.bridgeUrl.trim())) { setStatus({ ok: false, text: "The bridge URL must be https:// too." }); setBusy(false); return; }
+    const error = validatePocConnection(c) ?? liveConnectionError;
+    if (error || !c.apiKey) { setStatus({ ok: false, text: error || "Enter the Hermes API key (not the webapp password)." }); setBusy(false); return; }
     try {
       await new HermesClient(c).capabilities(); // authenticated: proves CF Access + Hermes key
       await save(c);
@@ -74,12 +84,15 @@ export default function Settings() {
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.canvas }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, gap: 18 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}><Logo /><Text style={type.title}>Connect to Hermes</Text></View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}><Logo /><Text style={type.title}>Hermione POC</Text></View>
           {config || demo ? <Pressable hitSlop={10} onPress={() => router.back()}><X size={22} color={colors.muted} /></Pressable> : null}
         </View>
-        <Text style={type.bodySm}>Your Hermes API server, published over HTTPS (Tailscale Funnel or a reverse proxy). These values are kept in the phone's encrypted secure storage (Android Keystore) and only sent to this server.</Text>
-        {field("baseUrl", "Server URL", { url: true, placeholder: "https://your-host.your-tailnet.ts.net", hint: "On the server: tailscale funnel status" })}
-        {field("apiKey", "Hermes API key", { secret: true, placeholder: "API_SERVER_KEY", hint: "On the server: API_SERVER_KEY in ~/.hermes/.env" })}
+        <Text style={type.bodySm}>Live connection: use the separately configured Hermes API over private Tailscale Serve HTTPS, not public Funnel. Tailscale must be connected on your phone. Native credentials are kept in Android Keystore-backed secure storage.</Text>
+        <Text style={type.bodySm}>The API endpoint and API key are NOT the existing webapp login/password. A desktop webapp on the same host is not this client's API. Confirm the API endpoint separately before connecting.</Text>
+        <Text style={type.bodySm}>Offline sample demo uses sample bots and conversations, with no live server connection. Live mode runs code on your Hermes server; cloud LLM calls remain possible if the backend is explicitly configured to use them.</Text>
+        {liveConnectionError ? <Text style={[type.bodySm, { color: colors.danger }]}>{liveConnectionError}</Text> : null}
+        {field("baseUrl", "Hermes API URL", { url: true, placeholder: "Confirmed Tailscale HTTPS API endpoint", hint: "For example https://your-host.your-tailnet.ts.net. Confirm the API port/path and tailscale serve status; do not use the desktop webapp URL." })}
+        {field("apiKey", "Hermes API key", { secret: true, placeholder: "API_SERVER_KEY", hint: "Use the separately configured API_SERVER_KEY, not your webapp password. Do not paste credentials into web preview." })}
         <Pressable onPress={() => setCfOpen((o) => !o)} accessibilityRole="button" accessibilityState={{ expanded: cfOpen }}
           accessibilityLabel="Cloudflare Access (optional)" style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 4 }}>
           {cfOpen ? <ChevronDown size={16} color={colors.muted} /> : <ChevronRight size={16} color={colors.muted} />}
@@ -88,14 +101,14 @@ export default function Settings() {
         </Pressable>
         {cfOpen ? (
           <View style={{ gap: 18, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.border }}>
-            <Text style={[type.label, { fontSize: 12, color: colors.dim }]}>Only if the server sits behind Cloudflare Access. Leave empty for Tailscale Funnel; the headers are sent only when both are filled in.</Text>
+            <Text style={[type.label, { fontSize: 12, color: colors.dim }]}>Leave empty for a private Tailscale Serve setup. Only use these if Cloudflare Access is separately configured; the headers are sent only when both are filled in.</Text>
             {field("cfClientId", "Cloudflare Access Client ID", { placeholder: "xxxxxxxx.access", hint: "Zero Trust → Access → Service Tokens." })}
             {field("cfClientSecret", "Cloudflare Access Client Secret", { secret: true, placeholder: "Client Secret", hint: "Shown once when the service token is created." })}
           </View>
         ) : null}
         <View style={{ gap: 6, paddingTop: 4 }}>
           <Text style={[type.title, { fontSize: 17 }]}>Hermes bridge (optional)</Text>
-          <Text style={[type.label, { fontSize: 12, color: colors.dim }]}>With hermes-bridge on the server, every Hermes profile shows up here automatically, "New bot" creates a real profile, and MCP servers, plugins, routines, skills and memory settings work from the phone. Without it, add profiles by hand.</Text>
+          <Text style={[type.label, { fontSize: 12, color: colors.dim }]}>Disabled by default: leave both bridge fields empty. Only enable an independently configured bridge on the same host with explicit authorization. Bridge features can change real profiles and server settings; this setup screen does not install a bridge or change the server.</Text>
         </View>
         {field("bridgeKey", "Bridge key", { secret: true, placeholder: "Leave empty to skip", hint: "On the server: the key hermes-bridge was started with" })}
         {f.bridgeKey?.trim() ? field("bridgeUrl", "Bridge URL", { url: true, placeholder: `${url(f.baseUrl) || "https://your-host.your-tailnet.ts.net"}/bridge`, hint: "Leave empty to use your server URL + /bridge" }) : null}
@@ -105,11 +118,11 @@ export default function Settings() {
         </Pressable>
         <Pressable onPress={async () => { await setDemo(!demo); router.replace("/"); }}
           style={{ borderRadius: radii.chip, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: colors.borderStrong }}>
-          <Text style={{ fontFamily: font.semibold, fontSize: 16, color: colors.text }}>{demo ? "Leave demo mode" : "Try demo (no connection)"}</Text>
+          <Text style={{ fontFamily: font.semibold, fontSize: 16, color: colors.text }}>{demo ? "Leave offline sample demo" : "Try offline sample demo (no server connection)"}</Text>
         </Pressable>
         {status ? <Text selectable style={[type.bodySm, { color: status.ok ? colors.success : colors.danger }]}>{status.text}</Text> : null}
         {failed ? (
-          <Pressable onPress={() => void saveOnly()} accessibilityLabel="Save without testing" style={{ alignItems: "center", paddingVertical: 6 }}>
+          <Pressable disabled={busy} onPress={saveOnly} accessibilityLabel="Save without testing" style={{ alignItems: "center", paddingVertical: 6 }}>
             <Text style={[type.label, { color: colors.accentText }]}>Save anyway (test later)</Text>
           </Pressable>
         ) : null}

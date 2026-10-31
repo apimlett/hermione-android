@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { execSync } from "node:child_process";
-execSync("npx -y esbuild@0.24.0 test/safety-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-safety/s.js --log-level=error");
+execSync("./node_modules/.bin/esbuild test/safety-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-safety/s.js --log-level=error");
 const { safeHref, tidyText, clipLong, newReplies, parseWatch, isGatewayNotice, parseNotice, decodeEscapes, tidyEscapes, fileKind, withFiles, splitFiles, FILE_TEXT_LIMIT } = await import("../node_modules/.cache/hm-safety/s.js");
 
 test("only http(s), mailto and tel links open", () => {

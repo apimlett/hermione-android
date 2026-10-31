@@ -6,7 +6,7 @@ import { historyRefreshCanApply, loadTurns } from "./history-turns";
 import { isGatewayNotice, parseNotice, tidyEscapes } from "./notices";
 import { splitFiles } from "./files";
 import { skillDisplay } from "./slash";
-import type { ApprovalChoice } from "./chat-model";
+
 import * as Store from "./secure";
 import { createStore, useStore } from "./store";
 import { faceMood, type FaceMood } from "./ui/face-state";
@@ -27,7 +27,7 @@ export type Ctx = {
   commandReply: (bot: Bot, typed: string, answer: string) => void;
   setDraft: (botId: string, text: string) => void;
   stop: (bot: Bot) => void;
-  approve: (bot: Bot, turnId: string, choice: ApprovalChoice) => Promise<void>;
+  approve: (bot: Bot, turnId: string, choice: string) => Promise<void>;
   react: (messageId: string, emoji: string | null) => void;
   save: (c: HermesConfig) => Promise<void>;
   primaryId: string | undefined;

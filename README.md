@@ -1,4 +1,6 @@
-# Hermes Mobile
+# Upstream Hermes Mobile documentation
+
+> **This checkout is the Hermione Android POC.** Start with [POC_README.md](POC_README.md) for the current scope, local build and private Tailscale requirements. The original upstream instructions below are retained for provenance; do not follow their Funnel, cloud-build or publishing setup for this POC.
 
 An Android app for your own [Hermes Agent](https://github.com/NousResearch/hermes-agent) (by Nous Research).
 Every Hermes profile shows up as a bot with its own face. You chat with it, watch what it's doing while

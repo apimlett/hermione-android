@@ -31,3 +31,9 @@ credentials.json
 .DS_Store
 *.log
 keys/
+
+# agent skills: installed locally per machine, not tracked
+.agents/
+.claude/skills/
+agent/skills/
+skills-lock.json

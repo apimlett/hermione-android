@@ -9,7 +9,7 @@ import assert from "node:assert";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-execSync("npx -y esbuild@0.24.0 test/safety-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-ghost/g.js --log-level=error");
+execSync("./node_modules/.bin/esbuild test/safety-entry.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/hm-ghost/g.js --log-level=error");
 const m = await import("../node_modules/.cache/hm-ghost/g.js");
 const fx = JSON.parse(readFileSync("test/fixtures/ghost-v0111.json", "utf8")).messages;
 const norm = (s) => s.replace(/\s+/g, " ").trim();

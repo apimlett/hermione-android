@@ -5,12 +5,12 @@
 // answer keeps the card with the error so you can try again. Nothing here claims the command ran.
 import { ShieldQuestion } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import type { Approval, ApprovalChoice } from "../chat-model";
+import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import type { Approval } from "../chat-model";
 import { tapHaptic } from "./haptics";
 import { colors, font, radii, type } from "./theme";
 
-type Choice = ApprovalChoice;
+type Choice = string;
 
 /** Shows exactly what will run (the full command or target), then Deny / Edit / Allow, plus
  *  "Allow for this chat" and "Always allow" (Hermes adds it to the allowlist). Edit denies the call and
@@ -18,6 +18,7 @@ type Choice = ApprovalChoice;
 export function ApprovalCard({ approval, respond, onEdit }: { approval: Approval; respond: (c: Choice) => Promise<void>; onEdit?: (detail: string) => void }) {
   const [sending, setSending] = useState<Choice | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [text, setText] = useState("");
 
   const answer = async (c: Choice) => {
     if (sending) return;
@@ -28,6 +29,19 @@ export function ApprovalCard({ approval, respond, onEdit }: { approval: Approval
     finally { setSending(null); }
   };
   const busy = sending !== null;
+
+  if (approval.kind === "clarify") return (
+    <View accessibilityRole="alert" style={{ padding: 16, gap: 12, borderRadius: radii.card, backgroundColor: colors.approvalSurface, borderWidth: 1, borderColor: colors.warning }}>
+      <Text style={type.label}>ANSWER NEEDED</Text>
+      <Text style={type.title}>{approval.title}</Text>
+      <Text style={type.bodySm}>{approval.multiSelect ? "Choose an answer or type multiple choices below." : "Choose an answer or type your own."}</Text>
+      {!approval.multiSelect ? approval.choices?.map((c) => <ChoiceButton key={c} label={c} busy={sending === c} disabled={busy} onPress={() => answer(c)} />) : null}
+      {approval.multiSelect && approval.choices?.length ? <Text style={type.bodySm}>{approval.choices.join(" · ")}</Text> : null}
+      <TextInput accessibilityLabel="Your answer" value={text} onChangeText={setText} editable={!busy} multiline placeholder="Your answer" placeholderTextColor={colors.muted} style={[type.bodySm, { minHeight: 44, padding: 10, borderWidth: 1, borderColor: colors.border, borderRadius: radii.inset }]} />
+      <ChoiceButton label="Send answer" primary busy={busy} disabled={busy || !text.trim()} onPress={() => answer(text)} />
+      {failed ? <Text accessibilityLiveRegion="polite" style={[type.bodySm, { color: colors.danger }]}>Hermes didn't accept the answer: {failed}. Try again.</Text> : null}
+    </View>
+  );
 
   return (
     <View accessibilityRole="alert" style={{ marginTop: 4, padding: 16, gap: 12, borderRadius: radii.card, backgroundColor: colors.approvalSurface, borderWidth: 1, borderColor: colors.warning, shadowColor: colors.warning, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>

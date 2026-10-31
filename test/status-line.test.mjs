@@ -5,7 +5,7 @@ import assert from "node:assert";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-execSync("npx -y esbuild@0.24.0 test/v080-entry.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-status/s.js --log-level=error");
+execSync("./node_modules/.bin/esbuild test/v080-entry.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/hm-status/s.js --log-level=error");
 const m = await import("../node_modules/.cache/hm-status/s.js");
 
 test("tool events map to specific phrases from their arguments", () => {

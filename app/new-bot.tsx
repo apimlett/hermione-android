@@ -8,7 +8,7 @@ import { Pressable, Text, View } from "react-native";
 import { useApp } from "../src/app-state";
 import { GRADIENTS, PALETTE, SHAPES } from "../src/appearance";
 import { AVATAR_EMOJI, type NewBot, STARTER_TOOLSETS as TOOLSETS } from "../src/backend";
-import { profileIdFrom } from "../src/live-backend";
+import { mobileProfileIdFrom } from "../src/live-backend";
 import { AppearancePicker, useCheer } from "../src/ui/appearance-picker";
 import { useLoad } from "../src/use-load";
 import { Button, Chip, TapFace, ComingSoon, ErrorText, Field, Screen, Section } from "../src/ui/kit";
@@ -67,7 +67,7 @@ export default function NewBotScreen() {
       ) : null}
       {canCreate ? <>
       <Field label="Name" placeholder="e.g. Chef, Scout, Atlas" value={b.name} onChangeText={(name) => setB({ ...b, name })} />
-      {backend.kind === "live" ? <Field label="Hermes profile id" placeholder={profileIdFrom(b.name) || "chef"} autoCapitalize="none" autoCorrect={false}
+      {backend.kind === "live" ? <Field label="Hermes profile id" placeholder={mobileProfileIdFrom(b.name) || "chef"} autoCapitalize="none" autoCorrect={false}
         value={b.profile ?? ""} onChangeText={(profile) => setB({ ...b, profile })} /> : null}
       <Field label="One-line description" placeholder="What is this bot for?" value={b.description} onChangeText={(description) => setB({ ...b, description })} />
       <Field label="Persona" multiline placeholder="Cheerful sous-chef who plans weekly meals and keeps a shopping list." value={b.persona} onChangeText={(persona) => setB({ ...b, persona })} />
@@ -83,7 +83,7 @@ export default function NewBotScreen() {
             onPress={() => setB({ ...b, toolsets: b.toolsets.includes(id) ? b.toolsets.filter((x) => x !== id) : [...b.toolsets, id] })} />)}
         </View>
       </Section>
-          {backend.kind === "live" ? <Text style={[type.label, { color: colors.dim }]}>Creates the profile "{profileIdFrom(b.profile || b.name) || "…"}" on your Hermes server. Its chat key is made for you and kept only on this phone.</Text> : null}
+          {backend.kind === "live" ? <Text style={[type.label, { color: colors.dim }]}>Creates the profile "{mobileProfileIdFrom(b.profile || b.name) || "…"}" on your Hermes server. Its chat key is made for you and kept only on this phone.</Text> : null}
           <Button title={busy ? "Hatching…" : `Create ${b.name || "bot"}`} disabled={!b.name.trim() || busy} onPress={() => void create()} />
           <ErrorText error={error} />
       </> : <ComingSoon what="Creating a brand-new Hermes profile from the phone" />}

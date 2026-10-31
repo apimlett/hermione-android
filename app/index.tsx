@@ -82,6 +82,10 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: insets.top }}>
+      {demo ? <View style={{paddingHorizontal:20,paddingVertical:10,backgroundColor:colors.surface,borderBottomWidth:1,borderBottomColor:colors.border}}>
+        <Text style={[type.label,{color:colors.warning}]}>Offline preview · sample bots and messages</Text>
+        <Text style={[type.caption,{marginTop:3}]}>Hermione POC · not connected to a server</Text>
+      </View> : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 8 }}>
         <Pressable accessibilityLabel="Settings" onPress={() => router.push("/preferences")} style={[circle, { backgroundColor: colors.control }]}>
           <UserRound size={22} color={colors.textSecondary} />
