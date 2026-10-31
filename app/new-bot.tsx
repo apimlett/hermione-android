@@ -11,7 +11,7 @@ import { AVATAR_EMOJI, type NewBot, STARTER_TOOLSETS as TOOLSETS } from "../src/
 import { mobileProfileIdFrom } from "../src/live-backend";
 import { AppearancePicker, useCheer } from "../src/ui/appearance-picker";
 import { useLoad } from "../src/use-load";
-import { Button, Chip, TapFace, ComingSoon, ErrorText, Field, Screen, Section } from "../src/ui/kit";
+import { Button, Chip, TapFace, ComingSoon, ErrorText, Field, Heading, Screen, Section } from "../src/ui/kit";
 import { colors, type } from "../src/ui/theme";
 
 const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
@@ -46,17 +46,27 @@ export default function NewBotScreen() {
   }
 
   return (
-    <Screen title={canCreate ? "New bot" : "Add a bot"} subtitle="Every bot is its own Hermes profile">
-      <View style={{ alignItems: "center", gap: 12 }}>
-        <TapFace bot={b} size={104} mood={busy ? "thinking" : error ? "error" : cheer ? "success" : "idle"} />
-        <Pressable onPress={() => { const c = pick([...PALETTE, ...GRADIENTS]); look({ emoji: pick(AVATAR_EMOJI), color: c.a, color2: c.b, shape: pick([...SHAPES]) }); }} style={{ flexDirection: "row", gap: 6, alignItems: "center" }} accessibilityLabel="Randomise avatar">
-          <Shuffle size={15} color={colors.muted} /><Text style={type.label}>Shuffle the look</Text>
-        </Pressable>
+    <Screen eyebrow="Create" title={canCreate ? "New bot" : "Add a bot"} subtitle="Every bot is its own Hermes profile">
+      {canCreate ? <>
+      <Heading>Identity</Heading>
+      <Field label="Name" placeholder="e.g. Chef, Scout, Atlas" value={b.name} onChangeText={(name) => setB({ ...b, name })} />
+      {backend.kind === "live" ? <Field label="Hermes profile id" placeholder={mobileProfileIdFrom(b.name) || "chef"} autoCapitalize="none" autoCorrect={false}
+        value={b.profile ?? ""} onChangeText={(profile) => setB({ ...b, profile })} /> : null}
+      <Field label="One-line description" placeholder="What is this bot for?" value={b.description} onChangeText={(description) => setB({ ...b, description })} />
+      <Field label="Persona" multiline placeholder="Cheerful sous-chef who plans weekly meals and keeps a shopping list." value={b.persona} onChangeText={(persona) => setB({ ...b, persona })} />
+      </> : null}
+      <Heading right={<Pressable onPress={() => { const c = pick([...PALETTE, ...GRADIENTS]); look({ emoji: pick(AVATAR_EMOJI), color: c.a, color2: c.b, shape: pick([...SHAPES]) }); }} style={({ pressed }) => ({ flexDirection: "row", gap: 6, alignItems: "center", minHeight: 48, paddingHorizontal: 8, backgroundColor: pressed ? colors.surfaceAlt : "transparent" })} accessibilityRole="button" accessibilityLabel="Randomise avatar">
+          <Shuffle size={16} color={colors.text} /><Text style={[type.eyebrow, { color: colors.text }]}>Shuffle</Text>
+        </Pressable>}>Appearance</Heading>
+      <View style={{ alignItems: "center", gap: 16 }}>
+        <View style={{ alignSelf: "stretch", alignItems: "center", paddingVertical: 18, backgroundColor: colors.surfaceAlt, borderRadius: 4 }}>
+          <TapFace bot={b} size={104} mood={busy ? "thinking" : error ? "error" : cheer ? "success" : "idle"} />
+        </View>
         <AppearancePicker look={b} onPick={look} />
       </View>
       {!canCreate ? (
         <Section title="Your Hermes profile" footer={"Hermes has no endpoint that lists profiles, so add each one by name. Its key is the API_SERVER_KEY in ~/.hermes/profiles/<name>/.env on your Hermes server; the main key isn't accepted for other profiles."}>
-          <View style={{ padding: 12, gap: 12 }}>
+          <View style={{ paddingVertical: 12, gap: 12 }}>
             <Field label="Profile name" placeholder="research" autoCapitalize="none" value={profile} onChangeText={setProfile} />
             <Field label="That profile's API_SERVER_KEY" secureTextEntry autoCapitalize="none" value={key} onChangeText={setKey} />
             <Field label="Display name (optional)" placeholder={profile.trim() ? profile.trim().replace(/^./, (c) => c.toUpperCase()) : "Research"} value={b.name} onChangeText={(name) => setB({ ...b, name })} />
@@ -66,25 +76,20 @@ export default function NewBotScreen() {
         </Section>
       ) : null}
       {canCreate ? <>
-      <Field label="Name" placeholder="e.g. Chef, Scout, Atlas" value={b.name} onChangeText={(name) => setB({ ...b, name })} />
-      {backend.kind === "live" ? <Field label="Hermes profile id" placeholder={mobileProfileIdFrom(b.name) || "chef"} autoCapitalize="none" autoCorrect={false}
-        value={b.profile ?? ""} onChangeText={(profile) => setB({ ...b, profile })} /> : null}
-      <Field label="One-line description" placeholder="What is this bot for?" value={b.description} onChangeText={(description) => setB({ ...b, description })} />
-      <Field label="Persona" multiline placeholder="Cheerful sous-chef who plans weekly meals and keeps a shopping list." value={b.persona} onChangeText={(persona) => setB({ ...b, persona })} />
       <Section title="Model">
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingVertical: 12 }}>
           <Chip label="Same as main" selected={!b.model} onPress={() => setB({ ...b, model: undefined, provider: undefined })} />
           {(models.data ?? []).slice(0, 10).map((m) => <Chip key={`${m.provider}/${m.id}`} label={m.id} selected={b.model === m.id} onPress={() => setB({ ...b, model: m.id, provider: m.provider })} />)}
         </View>
       </Section>
       <Section title="Toolsets">
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingVertical: 12 }}>
           {TOOLSETS.map(([id, label]) => <Chip key={id} label={label} selected={b.toolsets.includes(id)}
             onPress={() => setB({ ...b, toolsets: b.toolsets.includes(id) ? b.toolsets.filter((x) => x !== id) : [...b.toolsets, id] })} />)}
         </View>
       </Section>
           {backend.kind === "live" ? <Text style={[type.label, { color: colors.dim }]}>Creates the profile "{mobileProfileIdFrom(b.profile || b.name) || "…"}" on your Hermes server. Its chat key is made for you and kept only on this phone.</Text> : null}
-          <Button title={busy ? "Hatching…" : `Create ${b.name || "bot"}`} disabled={!b.name.trim() || busy} onPress={() => void create()} />
+          <Button arrow title={busy ? "Hatching…" : `Create ${b.name || "bot"}`} disabled={!b.name.trim() || busy} onPress={() => void create()} />
           <ErrorText error={error} />
       </> : <ComingSoon what="Creating a brand-new Hermes profile from the phone" />}
     </Screen>

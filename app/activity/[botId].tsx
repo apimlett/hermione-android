@@ -44,7 +44,7 @@ export default function ActivityScreen() {
             right={<Toggle value={t.enabled} disabled={!canToggle} onChange={async (v) => { await backend.setToolset(bot, t.name, v); void toolsets.reload(); }} />} />
         ))}
         {(mcp.loading && !mcp.data) || (toolsets.loading && !toolsets.data) ? <SkeletonRows rows={2} /> : null}
-        <View style={{ paddingHorizontal: 12 }}><ErrorText error={mcp.error ?? toolsets.error} /></View>
+        <View><ErrorText error={mcp.error ?? toolsets.error} /></View>
       </Section>
 
       <Section title="Timeline" footer="Tool calls in this bot's main chat, newest first.">

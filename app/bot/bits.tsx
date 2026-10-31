@@ -124,9 +124,9 @@ export const DayDivider = memo(function DayDivider({ label }: { label: string })
 export function JumpButton({ unseen, onPress, bottom }: { unseen: number; onPress: () => void; bottom: number }) {
   return (
     <Reanimated.View entering={enter.pop} exiting={leave.pop} style={{ position: "absolute", bottom, alignSelf: "center" }}>
-      <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={unseen ? `Jump to the latest message, ${unseen} new` : "Jump to the latest message"} to={0.9} style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: colors.floating, borderWidth: 1, borderColor: colors.borderStrong, elevation: 4 }}>
+      <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={unseen ? `Jump to the latest message, ${unseen} new` : "Jump to the latest message"} to={0.9} style={{ width: 48, height: 48, borderRadius: radii.inset, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.text }}>
         <ArrowDown size={22} color={colors.text} />
-        {unseen ? <View style={{ position: "absolute", top: -6, right: -6, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentText }}><Text style={{ color: colors.actionForeground, fontSize: 11, fontWeight: "700" }}>{unseen > 99 ? "99+" : unseen}</Text></View> : null}
+        {unseen ? <View style={{ position: "absolute", top: -6, right: -6, minWidth: 20, height: 20, borderRadius: 2, paddingHorizontal: 5, alignItems: "center", justifyContent: "center", backgroundColor: colors.coral }}><Text style={{ color: colors.actionForeground, fontSize: 11, fontWeight: "700" }}>{unseen > 99 ? "99+" : unseen}</Text></View> : null}
       </PressScale>
     </Reanimated.View>
   );
@@ -134,15 +134,15 @@ export function JumpButton({ unseen, onPress, bottom }: { unseen: number; onPres
 export const Header = memo(function Header({ bot, top, onMenu }: { bot: Bot; top: number; onMenu: () => void }) {
   const mood = useMood(bot.id, true);
   const status = moodLabel(mood, { reconnecting: useReconnecting(bot.id), approval: useHasApproval(bot.id) });
-  const circle = { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: colors.floating, borderWidth: 1, borderColor: colors.border } as const;
+  const circle = { width: 48, height: 48, borderRadius: radii.inset, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.rule } as const;
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", top, left: 0, right: 0, zIndex: 2, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
       <Pressable hitSlop={8} accessibilityLabel="Back to bots" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={circle}><ChevronLeft size={24} color={colors.text} /></Pressable>
-      <Pressable onPress={() => router.push(`/bot-info/${bot.id}`)} accessibilityLabel={`${bot.name} settings`} style={{ flexShrink: 1, flexDirection: "row", alignItems: "center", gap: 10, height: 44, paddingLeft: 6, paddingRight: 16, borderRadius: 22, backgroundColor: colors.floating, borderWidth: 1, borderColor: colors.border }}>
+      <Pressable onPress={() => router.push(`/bot-info/${bot.id}`)} accessibilityLabel={`${bot.name} settings`} style={{ flexShrink: 1, flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, paddingLeft: 6, paddingRight: 16, borderRadius: radii.inset, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.rule }}>
         <Avatar bot={bot} size={32} mood={mood} badge={false} />
         <View style={{ flexShrink: 1 }}>
-          <Text style={[type.title, { fontSize: 17 }]} numberOfLines={1}>{bot.name}</Text>
-          {status ? <Text style={[type.label, { fontSize: 11, lineHeight: 13, color: mood === "thinking" || mood === "working" ? colors.accentText : mood === "waiting" ? colors.warning : colors.muted }]} numberOfLines={1}>{status}</Text> : null}
+          <Text style={[type.h, { fontSize: 19, lineHeight: 22, textTransform: "uppercase" }]} numberOfLines={1}>{bot.name}</Text>
+          {status ? <Text style={[type.eyebrow, { fontSize: 10, lineHeight: 13, letterSpacing: 1, color: mood === "thinking" || mood === "working" ? colors.runningText : mood === "waiting" ? colors.waitingText : mood === "error" ? colors.failedText : colors.muted }]} numberOfLines={1}>{status}</Text> : null}
         </View>
       </Pressable>
       <View style={{ flex: 1 }} />
@@ -165,7 +165,7 @@ export function EmptyChat({ bot, error, onPick, onRetry }: { bot: Bot; error?: s
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 14, padding: 24 }}>
       <TapFace bot={bot} size={84} mood={mood} label={`${bot.name}'s face`} />
-      <Text style={[type.title, { fontSize: 20 }]}>Say hi to {bot.name}</Text>
+      <Text style={[type.civic, { fontSize: 28, lineHeight: 30, textAlign: "center" }]}>Say hi to {bot.name}</Text>
       <Text style={[type.bodySm, { color: error ? colors.danger : colors.muted, textAlign: "center" }]}>{error ? `Couldn't load the chat: ${error}` : bot.description}</Text>
       {error ? <RetryPill onPress={onRetry} /> : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 6 }}>

@@ -24,11 +24,11 @@ export default function Settings() {
   const [cfOpen, setCfOpen] = useState(!!(config?.cfClientId || config?.cfClientSecret));
   const field = (k: keyof HermesConfig, label: string, opts: { secret?: boolean; placeholder: string; hint: string; url?: boolean }) => (
     <View style={{ gap: 6 }}>
-      <Text style={[type.label, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[type.label, { color: colors.text }]}>{label}</Text>
       <TextInput value={f[k]} editable={!liveConnectionError} onChangeText={(v) => setF({ ...f, [k]: v })} secureTextEntry={opts.secret} autoCapitalize="none" autoCorrect={false}
         placeholder={opts.placeholder} keyboardType={opts.url ? "url" : "default"} accessibilityLabel={label}
-        placeholderTextColor={colors.dim} style={{ backgroundColor: colors.control, color: colors.text, fontFamily: font.regular, fontSize: 15,
-          borderRadius: radii.inset, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, paddingVertical: 12 }} />
+        placeholderTextColor={colors.muted} style={{ backgroundColor: colors.surface, color: colors.text, fontFamily: font.regular, fontSize: 15, minHeight: 48,
+          borderRadius: radii.inset, borderWidth: 1, borderColor: colors.rule, paddingHorizontal: 14, paddingVertical: 12 }} />
       <Text style={[type.label, { fontSize: 12, color: colors.dim }]}>{opts.hint}</Text>
     </View>
   );
@@ -83,9 +83,14 @@ export default function Settings() {
   return (
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.canvas }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, gap: 18 }} keyboardShouldPersistTaps="handled">
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}><Logo /><Text style={type.title}>Hermione POC</Text></View>
-          {config || demo ? <Pressable hitSlop={10} onPress={() => router.back()}><X size={22} color={colors.muted} /></Pressable> : null}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 48 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}><Logo /><Text style={type.eyebrow}>Hermione POC</Text></View>
+          {config || demo ? <Pressable hitSlop={4} accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: "center", justifyContent: "center" }}><X size={24} color={colors.text} /></Pressable> : null}
+        </View>
+        <View style={{ gap: 4, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
+          <Text style={type.eyebrow}>Server</Text>
+          <Text accessibilityRole="header" style={type.civic}>Connect</Text>
+          <Text style={type.bodySm}>Link this phone to your Hermes agents.</Text>
         </View>
         <Text style={type.bodySm}>Live connection: use the separately configured Hermes API over private Tailscale Serve HTTPS, not public Funnel. Tailscale must be connected on your phone. Native credentials are kept in Android Keystore-backed secure storage.</Text>
         <Text style={type.bodySm}>The API endpoint and API key are NOT the existing webapp login/password. A desktop webapp on the same host is not this client's API. Confirm the API endpoint separately before connecting.</Text>
@@ -100,29 +105,31 @@ export default function Settings() {
           {!cfOpen && (f.cfClientId || f.cfClientSecret) ? <Text style={[type.label, { color: colors.dim }]}>· set</Text> : null}
         </Pressable>
         {cfOpen ? (
-          <View style={{ gap: 18, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.border }}>
+          <View style={{ gap: 18, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.rule }}>
             <Text style={[type.label, { fontSize: 12, color: colors.dim }]}>Leave empty for a private Tailscale Serve setup. Only use these if Cloudflare Access is separately configured; the headers are sent only when both are filled in.</Text>
             {field("cfClientId", "Cloudflare Access Client ID", { placeholder: "xxxxxxxx.access", hint: "Zero Trust → Access → Service Tokens." })}
             {field("cfClientSecret", "Cloudflare Access Client Secret", { secret: true, placeholder: "Client Secret", hint: "Shown once when the service token is created." })}
           </View>
         ) : null}
-        <View style={{ gap: 6, paddingTop: 4 }}>
-          <Text style={[type.title, { fontSize: 17 }]}>Hermes bridge (optional)</Text>
+        <View style={{ gap: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.rule }}>
+          <Text style={type.eyebrow}>Hermes bridge (optional)</Text>
           <Text style={[type.label, { fontSize: 12, color: colors.dim }]}>Disabled by default: leave both bridge fields empty. Only enable an independently configured bridge on the same host with explicit authorization. Bridge features can change real profiles and server settings; this setup screen does not install a bridge or change the server.</Text>
         </View>
         {field("bridgeKey", "Bridge key", { secret: true, placeholder: "Leave empty to skip", hint: "On the server: the key hermes-bridge was started with" })}
         {f.bridgeKey?.trim() ? field("bridgeUrl", "Bridge URL", { url: true, placeholder: `${url(f.baseUrl) || "https://your-host.your-tailnet.ts.net"}/bridge`, hint: "Leave empty to use your server URL + /bridge" }) : null}
         <Pressable disabled={busy} onPress={testAndSave}
-          style={{ backgroundColor: colors.action, borderRadius: radii.chip, paddingVertical: 14, alignItems: "center", opacity: busy ? 0.6 : 1 }}>
-          <Text style={{ fontFamily: font.semibold, fontSize: 16, color: colors.actionForeground }}>{busy ? "Testing…" : "Test & save"}</Text>
+          accessibilityRole="button" accessibilityState={{ disabled: busy, busy }}
+          style={({ pressed }) => ({ backgroundColor: busy ? colors.surfaceAlt : pressed ? colors.coralPressed : colors.coral, borderRadius: radii.inset, minHeight: 52, paddingVertical: 14, alignItems: "center", justifyContent: "center" })}>
+          <Text style={{ fontFamily: font.display, fontWeight: "700", fontSize: 19, textTransform: "uppercase", color: busy ? colors.muted : colors.onCoral }}>{busy ? "Testing…" : "Test & save"}</Text>
         </Pressable>
         <Pressable onPress={async () => { await setDemo(!demo); router.replace("/"); }}
-          style={{ borderRadius: radii.chip, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: colors.borderStrong }}>
-          <Text style={{ fontFamily: font.semibold, fontSize: 16, color: colors.text }}>{demo ? "Leave offline sample demo" : "Try offline sample demo (no server connection)"}</Text>
+          accessibilityRole="button"
+          style={({ pressed }) => ({ borderRadius: radii.inset, minHeight: 52, paddingVertical: 14, paddingHorizontal: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.text, backgroundColor: pressed ? colors.surfaceAlt : "transparent" })}>
+          <Text style={{ fontFamily: font.semibold, fontSize: 15, textAlign: "center", color: colors.text }}>{demo ? "Leave offline sample demo" : "Try offline sample demo (no server connection)"}</Text>
         </Pressable>
         {status ? <Text selectable style={[type.bodySm, { color: status.ok ? colors.success : colors.danger }]}>{status.text}</Text> : null}
         {failed ? (
-          <Pressable disabled={busy} onPress={saveOnly} accessibilityLabel="Save without testing" style={{ alignItems: "center", paddingVertical: 6 }}>
+          <Pressable disabled={busy} onPress={saveOnly} accessibilityLabel="Save without testing" style={{ alignItems: "center", justifyContent: "center", minHeight: 48 }}>
             <Text style={[type.label, { color: colors.accentText }]}>Save anyway (test later)</Text>
           </Pressable>
         ) : null}

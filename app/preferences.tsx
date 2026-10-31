@@ -39,7 +39,7 @@ export default function Preferences() {
       <Section title="Chat">
         <Row title="Message times" detail="Small time under each burst of messages" right={<Toggle value={p.showTimestamps} onChange={(v) => setPrefs({ showTimestamps: v })} />} />
         <Row title="Live status lines" detail={'"Searching the web…" while a bot works'} right={<Toggle value={p.showStatus} onChange={(v) => setPrefs({ showStatus: v })} />} last />
-        <View style={{ padding: 12, gap: 8 }}>
+        <View style={{ paddingVertical: 12, gap: 8 }}>
           <Text style={type.label}>Read-aloud speed</Text>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
             {RATES.map((r) => <Chip key={r} label={`${r}×`} selected={p.readAloudRate === r} onPress={() => setPrefs({ readAloudRate: r })} />)}
@@ -55,7 +55,7 @@ export default function Preferences() {
         <Row title="Approvals" right={<Toggle value={p.notifyApprovals} onChange={(v) => setPrefs({ notifyApprovals: v })} />} />
         <Row title="Errors" right={<Toggle value={p.notifyErrors} onChange={(v) => setPrefs({ notifyErrors: v })} />} />
         <Row title="Hide message text" detail="Notifications say 'New reply' only" right={<Toggle value={p.hidePreviews} onChange={(v) => setPrefs({ hidePreviews: v })} />} last />
-        <View style={{ padding: 12, gap: 8 }}>
+        <View style={{ paddingVertical: 12, gap: 8 }}>
           <Text style={type.label}>Quiet hours</Text>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
             {QUIET.map((q) => <Chip key={q.label} label={q.label} selected={p.quietStart === q.v[0] && p.quietEnd === q.v[1]} onPress={() => setPrefs({ quietStart: q.v[0], quietEnd: q.v[1] })} />)}

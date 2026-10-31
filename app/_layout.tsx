@@ -1,13 +1,12 @@
-import { useFonts } from "expo-font";
 import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Appearance, Pressable, ScrollView, Text, View } from "react-native";
+import { Appearance, Pressable, ScrollView, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppProvider, useApp } from "../src/app-state";
 import { clearBotNotifications, ensureNotifications, onNotificationTap } from "../src/notify";
-import { colors, setTheme } from "../src/ui/theme";
+import { colors, font, setTheme } from "../src/ui/theme";
 import { loadPrefs, usePrefs } from "../src/prefs";
 import { AppLock } from "../src/ui/app-lock";
 import { ToastHost } from "../src/ui/toast";
@@ -47,7 +46,7 @@ function useLastCrash(): LastCrash | null {
 function CrashReport({ crash }: { crash: LastCrash }) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={{ padding: 24, paddingTop: 80, gap: 14 }}>
-      <Text style={{ color: colors.text, fontSize: 20 }}>Hermes hit a problem last time</Text>
+      <Text style={{ color: colors.coral, fontSize: 28, fontFamily: font.display, fontWeight: "700", textTransform: "uppercase" }}>Hermes hit a problem last time</Text>
       <Text selectable style={{ color: colors.muted, fontSize: 13 }}>{new Date(crash.at).toLocaleString()}</Text>
       <Text selectable style={{ color: colors.text, fontSize: 14 }}>{crash.message}</Text>
       <Text selectable style={{ color: colors.dim, fontSize: 11 }}>{crash.stack}</Text>
@@ -79,10 +78,10 @@ function NotificationTaps() {
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.canvas }} contentContainerStyle={{ padding: 24, paddingTop: 80, gap: 14 }}>
-      <Text style={{ color: colors.text, fontSize: 20 }}>Hermes hit a problem</Text>
+      <Text style={{ color: colors.coral, fontSize: 28, fontFamily: font.display, fontWeight: "700", textTransform: "uppercase" }}>Hermes hit a problem</Text>
       <Text selectable style={{ color: colors.muted, fontSize: 13 }}>{String(error?.message ?? error)}</Text>
       <Text selectable style={{ color: colors.dim, fontSize: 11 }}>{String(error?.stack ?? "").slice(0, 1500)}</Text>
-      <Pressable onPress={() => void retry()} style={{ alignSelf: "flex-start", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.control }}>
+      <Pressable onPress={() => void retry()} style={{ alignSelf: "flex-start", paddingHorizontal: 16, paddingVertical: 10, minHeight: 48, justifyContent: "center", borderRadius: 4, borderWidth: 1, borderColor: colors.text, backgroundColor: colors.canvas }}>
         <Text style={{ color: colors.text }}>Try again</Text>
       </Pressable>
     </ScrollView>
@@ -99,12 +98,7 @@ export default function RootLayout() {
     const sub = Appearance.addChangeListener(update);
     return () => sub.remove();
   }, [appearance]);
-  const [loaded] = useFonts({
-    "Inter-Regular": require("../assets/fonts/Inter-Regular.ttf"),
-    "Inter-Medium": require("../assets/fonts/Inter-Medium.ttf"),
-    "Inter-SemiBold": require("../assets/fonts/Inter-SemiBold.ttf"),
-  });
-  if (!loaded) return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
+  // Fonts are the platform's Roboto family (DS v0.2), so there is nothing to load first.
   if (lastCrash) return <CrashReport crash={lastCrash} />;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -7,7 +7,7 @@ import { ArrowUpRight } from "lucide-react-native";
 import type { Bot } from "../backend";
 import { reconcileAttentionKey, type AttentionItem } from "./attention-items";
 import { attentionMorphProgress, cardGeometry, cardWidthFor, reconcileMorphSelection, ringSelectionFromScrollOffset, settleTarget, spacingFor } from "./attention-geometry";
-import { colors, font, type } from "./theme";
+import { colors, font, radii, type } from "./theme";
 
 type Props = {
   items: AttentionItem[];
@@ -100,7 +100,7 @@ export function AttentionCarousel({ items, bots, loading = false, scrollY, onSel
 
   return (
     <View style={{ height: ATTENTION_CLIP_HEIGHT, overflow: "hidden", marginBottom: 8 }}>
-      {loading ? <View accessibilityLabel="Loading attention" style={{ position: "absolute", left: 20, right: 20, top: 35, height: 168, borderRadius: 20, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, opacity: 0.65 }} />
+      {loading ? <View accessibilityLabel="Loading attention" style={{ position: "absolute", left: 20, right: 20, top: 35, height: 168, borderRadius: radii.card, backgroundColor: colors.surface, borderColor: colors.rule, borderWidth: 1, opacity: 0.65 }} />
         : items.length === 0 ? <View accessibilityLabel="No attention items" style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><Text style={[type.bodySm, { color: colors.muted }]}>Nothing needs your attention</Text></View>
           : <>
             <GestureDetector gesture={pan}>
@@ -139,7 +139,7 @@ function RingRow({ items, selectedIndex, compact, style, onSelect }: {
     style={[{ position: "absolute", left: 16, right: 16, top: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 48 }, style]}>
     {items.map((item, itemIndex) => {
       const active = itemIndex === selectedIndex;
-      const tint = colors.accentText;
+      const tint = colors.coralText;
       return <Pressable key={item.key} onPress={() => onSelect(itemIndex)} accessibilityRole="button"
         accessibilityLabel={`${item.title}${item.metric ? `, ${item.metric}` : ""}`} accessibilityState={{ selected: active }}
         accessibilityHint={active ? "Selected attention item" : "Select and expand this attention item"}
@@ -167,10 +167,15 @@ function AttentionCard({ item, bot, index, selected, width, spacing, position, s
       { rotateY: `${geometry.rotateY}deg` }, { scale: geometry.scale },
     ] };
   });
-  const labelColor = item.kind === "failed" || item.kind === "routine" ? colors.danger
-    : item.kind === "approval" ? colors.warning
-    : item.kind === "running" ? colors.success
-    : colors.accentText;
+  // DS: coral is not a status colour. The bar uses the status colour; the words carry the meaning.
+  const bar = item.kind === "failed" || item.kind === "routine" ? colors.failed
+    : item.kind === "approval" ? colors.waiting
+    : item.kind === "running" ? colors.running
+    : colors.ruleStrong;
+  const labelColor = item.kind === "failed" || item.kind === "routine" ? colors.failedText
+    : item.kind === "approval" ? colors.waitingText
+    : item.kind === "running" ? colors.runningText
+    : colors.muted;
   const kindLabel = item.kind === "approval" ? "Needs your OK"
     : item.kind === "running" ? "In progress"
     : item.kind === "failed" ? "Needs attention"
@@ -182,19 +187,19 @@ function AttentionCard({ item, bot, index, selected, width, spacing, position, s
   return <Animated.View style={[{ position: "absolute", left: "50%", marginLeft: -width / 2, top: 20, width, minHeight: 188 }, style]}>
     <Pressable accessibilityRole="button" accessibilityLabel={`${item.title}${item.detail ? `, ${item.detail}` : ""}${item.metric ? `, ${item.metric}` : ""}`}
       accessibilityState={{ selected }} accessibilityHint={selected ? "Currently centered" : "Center this card"} onPress={onSelect}
-      style={({ pressed }) => ({ minHeight: 188, flex: 1, gap: 8, padding: 16, borderRadius: 28,
-        backgroundColor: pressed ? colors.control : `${labelColor}16`, justifyContent: "center" })}>
+      style={({ pressed }) => ({ minHeight: 188, flex: 1, gap: 8, padding: 16, borderRadius: radii.card, borderWidth: 1, borderColor: colors.rule, borderLeftWidth: 4, borderLeftColor: bar,
+        backgroundColor: pressed ? colors.surfaceAlt : colors.surface, justifyContent: "center" })}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View style={{ flexShrink: 1, minHeight: 30, alignSelf: "flex-start", justifyContent: "center", paddingHorizontal: 11, borderRadius: 15, backgroundColor: `${labelColor}22` }}>
-          <Text style={[type.label, { color: labelColor }]} numberOfLines={1}>{identity}</Text>
+        <View style={{ flex: 1, minHeight: 30, justifyContent: "center" }}>
+          <Text style={[type.eyebrow, { color: labelColor }]} numberOfLines={1}>{identity}</Text>
         </View>
         {item.destination ? <Pressable accessibilityRole="button" accessibilityLabel={`Open ${bot?.name ?? "attention item"}`} onPress={onOpen}
-          hitSlop={6} style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.text, opacity: pressed ? 0.78 : 1 })}>
-          <ArrowUpRight size={18} color={colors.canvas} strokeWidth={2.5} />
+          hitSlop={6} style={({ pressed }) => ({ width: 40, height: 40, borderRadius: radii.inset, alignItems: "center", justifyContent: "center", backgroundColor: pressed ? colors.coralPressed : colors.coral })}>
+          <ArrowUpRight size={20} color={colors.onCoral} strokeWidth={2.25} />
         </Pressable> : null}
       </View>
-      <Text style={{ color: labelColor, fontFamily: font.medium, fontSize: 29, lineHeight: 34, fontVariant: ["tabular-nums"] }} numberOfLines={1}>{item.metric}</Text>
-      <Text style={[type.title, { fontSize: 18, lineHeight: 23, fontFamily: font.semibold }]} numberOfLines={2}>{title}</Text>
+      <Text style={{ color: colors.text, fontFamily: font.display, fontWeight: "700", fontSize: 34, lineHeight: 38, fontVariant: ["tabular-nums"] }} numberOfLines={1}>{item.metric}</Text>
+      <Text style={[type.title, { fontSize: 17, lineHeight: 23 }]} numberOfLines={2}>{title}</Text>
       {item.detail ? <Text style={[type.bodySm, { color: colors.textSecondary }]} numberOfLines={1}>{item.detail}</Text> : null}
     </Pressable>
   </Animated.View>;

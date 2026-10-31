@@ -8,6 +8,7 @@ import { Pressable, type PressableProps, type StyleProp, View, type ViewStyle } 
 import Animated, { cancelAnimation, Easing, FadeIn, FadeOut, ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withRepeat,
   withSpring, withTiming, ZoomIn, ZoomOut } from "react-native-reanimated";
 import { tapHaptic } from "./haptics";
+import { colors } from "./theme";
 import { useLiveSurface, useReduceMotion as useReducedMotion } from "./live-surface";
 import { DUR, SPRINGS } from "./motion-tokens";
 
@@ -72,7 +73,7 @@ export function Skeleton({ width = "100%", height = 14, radius = 7, style }: { w
     return () => cancelAnimation(o);
   }, [reduced, live]); // eslint-disable-line react-hooks/exhaustive-deps
   const a = useAnimatedStyle(() => ({ opacity: o.value }));
-  return <Animated.View style={[{ width, height, borderRadius: radius, backgroundColor: "#24242a" }, style, a]} />;
+  return <Animated.View style={[{ width, height, borderRadius: radius, backgroundColor: colors.surfaceAlt }, style, a]} />;
 }
 
 /** A few skeleton rows shaped like list rows (title + detail). */

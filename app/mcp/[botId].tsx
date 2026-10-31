@@ -73,14 +73,14 @@ export default function McpScreen() {
           </Section>
           {changed && backend.restartGateway ? (
             <Section footer="MCP changes take effect on the next Hermes gateway restart. Restarting stops replies that are in progress.">
-              <View style={{ padding: 12 }}>
+              <View style={{ paddingVertical: 12 }}>
                 <Button kind="secondary" title={restart === "busy" ? "Restarting…" : restart === "done" ? "Restart requested ✓" : "Restart Hermes to apply"} disabled={restart !== "idle"}
                   onPress={async () => { setRestart("busy"); setError(null); try { await backend.restartGateway!(); setRestart("done"); } catch (e: any) { setError(String(e?.message ?? e)); setRestart("idle"); } }} />
               </View>
             </Section>
           ) : null}
           <Section title="Add a server" footer="Saved to this bot's config.yaml. A token is stored in its .env, never in config.">
-            <View style={{ padding: 12, gap: 12 }}>
+            <View style={{ paddingVertical: 12, gap: 12 }}>
               <Field label="Name" placeholder="tools-hub" autoCapitalize="none" value={name} onChangeText={setName} />
               <Field label="URL" placeholder="https://mcp.example.com/mcp" autoCapitalize="none" keyboardType="url" value={url} onChangeText={setUrl} />
               <Field label="Bearer token (optional)" placeholder="Sent as Authorization: Bearer …" autoCapitalize="none" secureTextEntry value={auth} onChangeText={setAuth} />

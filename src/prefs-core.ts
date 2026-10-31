@@ -13,7 +13,8 @@ export type Prefs = {
   appLock: boolean;
 };
 export const DEFAULT_PREFS: Prefs = {
-  appearance: "system",
+  // DS v0.2 (Swiss Civic / Coral Parchment) is a light direction; dark stays available in Settings.
+  appearance: "light",
   showTimestamps: true, showStatus: true, readAloudRate: 1,
   notifyReplies: true, notifyApprovals: true, notifyErrors: true, hidePreviews: false,
   quietStart: null, quietEnd: null, bots: {}, appLock: false,

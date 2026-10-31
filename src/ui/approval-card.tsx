@@ -44,19 +44,18 @@ export function ApprovalCard({ approval, respond, onEdit }: { approval: Approval
   );
 
   return (
-    <View accessibilityRole="alert" style={{ marginTop: 4, padding: 16, gap: 12, borderRadius: radii.card, backgroundColor: colors.approvalSurface, borderWidth: 1, borderColor: colors.warning, shadowColor: colors.warning, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 2 }}>
+    <View accessibilityRole="alert" style={{ marginTop: 4, padding: 16, gap: 12, borderRadius: radii.card, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.rule, borderLeftWidth: 4, borderLeftColor: colors.waiting }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: colors.approvalIcon }}>
-          <ShieldQuestion size={15} color={colors.warning} />
-        </View>
-        <Text style={[type.label, { color: colors.warning, letterSpacing: 0.5, fontFamily: font.semibold }]}>NEEDS YOUR OK</Text>
+        <View style={{ width: 9, height: 9, borderRadius: 999, backgroundColor: colors.waiting }} />
+        <ShieldQuestion size={16} color={colors.waitingText} />
+        <Text style={[type.eyebrow, { color: colors.text }]}>Waiting · needs your OK</Text>
       </View>
       <View style={{ gap: 4 }}>
         <Text style={type.title}>{approval.title}</Text>
         <Text style={type.bodySm}>The run is paused. Nothing happens until you choose.</Text>
       </View>
       {approval.detail ? (
-        <View style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: radii.inset, backgroundColor: colors.approvalDetail, borderWidth: 1, borderColor: colors.border }}>
+        <View style={{ paddingHorizontal: 12, paddingVertical: 10, borderRadius: radii.inset, backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.rule }}>
           <Text selectable style={{ fontFamily: font.mono, fontSize: 13, lineHeight: 19, color: colors.text }}>{approval.detail}</Text>
         </View>
       ) : null}
@@ -78,10 +77,10 @@ function ChoiceButton({ label, primary, busy, disabled, onPress }: { label: stri
   const fg = primary ? colors.actionForeground : colors.text;
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, busy }} disabled={disabled} onPress={onPress}
-      style={({ pressed }) => ({ flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.chip,
-        opacity: disabled && !busy ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
-        backgroundColor: primary ? (pressed ? colors.accentText : colors.action) : pressed ? colors.controlActive : colors.control })}>
-      {busy ? <ActivityIndicator size="small" color={fg} /> : <Text style={{ fontFamily: font.semibold, fontSize: 14.5, color: fg }}>{label}</Text>}
+      style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.inset,
+        opacity: disabled && !busy ? 0.45 : 1, borderWidth: primary ? 0 : 1, borderColor: colors.text,
+        backgroundColor: primary ? (pressed ? colors.coralPressed : colors.coral) : pressed ? colors.surfaceAlt : "transparent" })}>
+      {busy ? <ActivityIndicator size="small" color={fg} /> : <Text style={primary ? { fontFamily: font.display, fontWeight: "700", fontSize: 19, textTransform: "uppercase", color: fg } : { fontFamily: font.semibold, fontSize: 15, color: fg }}>{label}</Text>}
     </Pressable>
   );
 }
@@ -89,7 +88,7 @@ function ChoiceButton({ label, primary, busy, disabled, onPress }: { label: stri
 function LinkChoice({ label, busy, disabled, onPress }: { label: string; busy: boolean; disabled: boolean; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, busy }} disabled={disabled} onPress={onPress}
-      style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 12, justifyContent: "center", borderRadius: 999, opacity: disabled && !busy ? 0.45 : 1, backgroundColor: pressed ? colors.control : "transparent" })}>
+      style={({ pressed }) => ({ minHeight: 48, paddingHorizontal: 12, justifyContent: "center", borderRadius: radii.inset, opacity: disabled && !busy ? 0.45 : 1, backgroundColor: pressed ? colors.control : "transparent" })}>
       {busy ? <ActivityIndicator size="small" color={colors.muted} /> : <Text style={[type.label, { color: colors.textSecondary }]}>{label}</Text>}
     </Pressable>
   );

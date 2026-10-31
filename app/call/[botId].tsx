@@ -7,7 +7,7 @@ export default function CallScreen() {
   return <View style={{flex:1,backgroundColor:colors.canvas,padding:28,justifyContent:"center",gap:20}}>
     <Text style={type.title}>Voice is not included yet</Text>
     <Text style={type.body}>Voice calls are disabled in this POC until on-device speech processing has been verified. Your microphone is not accessed.</Text>
-    <Pressable accessibilityRole="button" onPress={()=>router.back()} style={{padding:16,backgroundColor:colors.control,borderRadius:16}}>
+    <Pressable accessibilityRole="button" onPress={()=>router.back()} style={{padding:16,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.text,borderRadius:4}}>
       <Text style={type.body}>Back to my bots</Text>
     </Pressable>
   </View>;
