@@ -77,6 +77,7 @@ export class BridgeClient {
   removeMcp(profile: string, name: string) { return this.req("DELETE", this.p(profile, `/mcp/${enc(name)}`)); }
 
   async jobs(profile: string) { return (await this.req<{ jobs: BridgeJob[] }>("GET", this.p(profile, "/jobs"))).jobs ?? []; }
+  workers(profile: string) { return this.req<import("./workers").WorkerSnapshot>("GET", this.p(profile, "/workers")); }
   jobAction(profile: string, id: string, action: "pause" | "resume" | "trigger") { return this.req("POST", this.p(profile, `/jobs/${enc(id)}/${action}`), {}); }
 
   async skills(profile: string) { return (await this.req<{ skills: BridgeSkill[] }>("GET", this.p(profile, "/skills"))).skills ?? []; }

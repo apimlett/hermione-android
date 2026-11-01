@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppProvider, useApp } from "../src/app-state";
+import { WorkerProvider } from "../src/worker-monitor";
 import { clearBotNotifications, ensureNotifications, onNotificationTap } from "../src/notify";
 import { colors, font, setTheme } from "../src/ui/theme";
 import { loadPrefs, usePrefs } from "../src/prefs";
@@ -68,6 +69,7 @@ function NotificationTaps() {
     dismiss();
     if (t.choice && t.turnId) { void approve(bot, t.turnId, t.choice).catch(() => {}); return; }
     clearBotNotifications(bot.id);
+    if (t.workerId) { router.push({ pathname: "/activity/[botId]", params: { botId: bot.id, worker: t.workerId } }); return; }
     router.push(`/bot/${bot.id}`);
   }), [bots, approve]);
   return null;
@@ -103,6 +105,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <AppProvider>
+        <WorkerProvider>
         <NotificationTaps />
         <StatusBar style={mode === "light" ? "dark" : "light"} />
         {/* Screens slide in from the right (native stack, UI thread); Home and modals keep their own. */}
@@ -112,6 +115,7 @@ export default function RootLayout() {
         </Stack>
         <ToastHost />
         <AppLock />
+        </WorkerProvider>
       </AppProvider>
     </SafeAreaProvider>
     </GestureHandlerRootView>

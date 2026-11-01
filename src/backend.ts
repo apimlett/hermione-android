@@ -66,6 +66,8 @@ export class CommandError extends Error {
 }
 
 export interface Backend {
+  /** Optional durable child status; independent of parent chat turns. */
+  listWorkers?(b: Bot): Promise<import("./workers").WorkerSnapshot>;
   kind: "demo" | "live";
   supports(f: BridgeFeature): boolean;
   listBots(): Promise<Bot[]>;

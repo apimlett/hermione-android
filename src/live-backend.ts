@@ -140,6 +140,14 @@ export class LiveBackend implements Backend {
   }
   async removeBot(id: string) { if (id === "default") return; await this.saveRoster((await this.roster()).filter((b) => b.id !== id)); }
   chat(b: Bot) { return this.client(b); }
+  async listWorkers(b: Bot): Promise<import("./workers").WorkerSnapshot> {
+    if (!this.bridge) return { capability: "unavailable", workers: [], hasMore: false, push: "blocked" };
+    try { return await this.bridge.workers(b.profile); }
+    catch (e) {
+      if (e instanceof BridgeError && e.status === 404) return { capability: "unavailable", workers: [], hasMore: false, push: "blocked" };
+      throw e;
+    }
+  }
 
   /** The one session this bot chats in. Order: the id stored for this profile (if it still exists) ->
    *  the profile's canonical "Bot Chat" (exact-title lookup incl. hidden rows, as `hermes peer dm` does;
