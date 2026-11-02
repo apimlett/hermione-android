@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
     "test:poc": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test test/poc-*.test.mjs",
-    "test": "node --test test/sse.test.mjs test/run-stream.test.mjs test/v080.test.mjs test/backend.test.mjs test/client.test.mjs test/live.test.mjs test/home.test.mjs test/attention.test.mjs test/attention-geometry.test.mjs test/bridge.test.mjs test/md.test.mjs test/chat-tools.test.mjs test/safety.test.mjs test/list-rows.test.mjs test/chat-follow.test.mjs test/status-line.test.mjs test/slash.test.mjs test/ghost.test.mjs test/face.test.mjs test/snapshot.test.mjs test/steps-pill.test.mjs"
+    "test": "node --test test/sse.test.mjs test/run-stream.test.mjs test/v080.test.mjs test/backend.test.mjs test/client.test.mjs test/live.test.mjs test/home.test.mjs test/attention.test.mjs test/attention-geometry.test.mjs test/bridge.test.mjs test/md.test.mjs test/chat-tools.test.mjs test/safety.test.mjs test/list-rows.test.mjs test/chat-follow.test.mjs test/status-line.test.mjs test/slash.test.mjs test/ghost.test.mjs test/face.test.mjs test/snapshot.test.mjs test/steps-pill.test.mjs test/poc-worker-monitor.test.mjs test/poc-worker-notify.test.mjs test/poc-worker-observer.test.mjs test/poc-worker-ui.test.mjs test/poc-workers.test.mjs test/poc-worker-fix1-panel-rows.test.mjs test/poc-worker-fix2-observer-serialize.test.mjs test/poc-worker-fix3-monitor-stall.test.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",
@@ -39,7 +39,7 @@
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
     "react-native-svg": "15.16.0",
-    "react-native-web": "^0.21.4",
+    "react-native-web": "^0.21.0",
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {

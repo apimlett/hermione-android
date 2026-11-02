@@ -9,6 +9,21 @@ type Options = {
 };
 const ACK_KEY = 'hermione.worker.notifications.v1';
 
+/** All observer instances write to the same SecureStore key. If a connection save
+ *  replaces this observer while a previous instance's notification acknowledgement is
+ *  still in flight, the late write would otherwise erase the new instance's state.
+ *  Serialising writes and forcing each instance to drain the queue before its own
+ *  read keeps the latest persisted set the winner. */
+let writeQueue: Promise<unknown> = Promise.resolve();
+function serializeAckWrite<T>(fn: () => Promise<T>): Promise<T> {
+  const next = writeQueue.then(() => fn(), () => fn());
+  writeQueue = next.catch(() => undefined);
+  return next;
+}
+async function awaitAckWrites(): Promise<void> {
+  await writeQueue;
+}
+
 /** Observes durable children independently of chat/run lifetime. No assistant prose inference. */
 export class WorkerObserver {
   private snapshots = new Map<string, WorkerSnapshot>();
@@ -25,11 +40,8 @@ export class WorkerObserver {
     return this.pending ??= this.run(bots).finally(() => { this.pending = undefined; });
   }
   private async run(bots: Bot[]): Promise<void> {
-    if (!this.acknowledged) {
-      let stored: unknown;
-      try { stored = JSON.parse(await this.options.store.getItem(ACK_KEY) ?? '[]'); } catch { stored = []; }
-      this.acknowledged = new Set(Array.isArray(stored) ? stored.filter((s): s is string => typeof s === 'string') : []);
-    }
+    await this.ensureLoaded();
+    if (this.disposed) return;
     for (const bot of bots) {
       if (this.disposed) return;
       let data: WorkerSnapshot;
@@ -43,14 +55,23 @@ export class WorkerObserver {
         if (this.disposed) return;
         if (!worker.eventId || worker.state === 'running') continue;
         const key = JSON.stringify([this.options.scope, bot.profile, worker.eventId]);
-        if (this.acknowledged.has(key)) continue;
+        if (this.acknowledged!.has(key)) continue;
         try {
           if (await this.options.notify(bot, worker)) {
-            this.acknowledged.add(key);
-            await this.options.store.setItem(ACK_KEY, JSON.stringify([...this.acknowledged]));
+            this.acknowledged!.add(key);
+            await serializeAckWrite(() => this.options.store.setItem(ACK_KEY, JSON.stringify([...this.acknowledged!])));
           }
         } catch { /* A provider/storage failure is not evidence of device delivery. */ }
       }
     }
+  }
+  private async ensureLoaded(): Promise<void> {
+    if (this.acknowledged) return;
+    // Drain any pending writes from previous observers so the load reads the
+    // latest persisted state, not whatever another instance is still writing.
+    await awaitAckWrites();
+    let stored: unknown;
+    try { stored = JSON.parse(await this.options.store.getItem(ACK_KEY) ?? '[]'); } catch { stored = []; }
+    this.acknowledged = new Set(Array.isArray(stored) ? stored.filter((s): s is string => typeof s === 'string') : []);
   }
 }
