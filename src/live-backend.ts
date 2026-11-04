@@ -140,11 +140,13 @@ export class LiveBackend implements Backend {
   }
   async removeBot(id: string) { if (id === "default") return; await this.saveRoster((await this.roster()).filter((b) => b.id !== id)); }
   chat(b: Bot) { return this.client(b); }
-  async listWorkers(b: Bot): Promise<import("./workers").WorkerSnapshot> {
+  async listWorkers(b: Bot, signal?: AbortSignal): Promise<import("./workers").WorkerSnapshot> {
     if (!this.bridge) return { capability: "unavailable", workers: [], hasMore: false, push: "blocked" };
-    try { return await this.bridge.workers(b.profile); }
+    try { return await this.bridge.workers(b.profile, signal); }
     catch (e) {
-      if (e instanceof BridgeError && e.status === 404) return { capability: "unavailable", workers: [], hasMore: false, push: "blocked" };
+      // A 404 means an older bridge without the capability; an aborted request is a
+      // deadline. Both are "unavailable", never idle or success.
+      if (e instanceof BridgeError && (e.status === 404 || e.code === "aborted")) return { capability: "unavailable", workers: [], hasMore: false, push: "blocked" };
       throw e;
     }
   }

@@ -35,13 +35,18 @@ const enc = encodeURIComponent;
 export class BridgeClient {
   constructor(private t: BridgeTarget) {}
 
-  async req<T = any>(method: string, path: string, body?: unknown): Promise<T> {
+  async req<T = any>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
     const h: Record<string, string> = { Authorization: `Bearer ${this.t.key}`, Accept: "application/json" };
     if (body !== undefined) h["Content-Type"] = "application/json";
     if (this.t.cfClientId && this.t.cfClientSecret) { h["CF-Access-Client-Id"] = this.t.cfClientId; h["CF-Access-Client-Secret"] = this.t.cfClientSecret; }
     let res: Response;
-    try { res = await fetch(this.t.url + path, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) }) as unknown as Response; }
-    catch (e: any) { throw new BridgeError(0, "unreachable", `Can't reach hermes-bridge at ${this.t.url} (${e?.message ?? e}).`); }
+    try { res = await fetch(this.t.url + path, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body), signal } as any) as unknown as Response; }
+    catch (e: any) {
+      // An aborted request is a caller-side deadline, not a transport failure: keep it
+      // distinguishable so callers report "unavailable" rather than "unreachable".
+      if (e?.name === "AbortError") throw new BridgeError(0, "aborted", "The bridge request was cancelled.");
+      throw new BridgeError(0, "unreachable", `Can't reach hermes-bridge at ${this.t.url} (${e?.message ?? e}).`);
+    }
     const text = await res.text();
     let j: any = null;
     try { j = text ? JSON.parse(text) : null; } catch {}
@@ -77,7 +82,7 @@ export class BridgeClient {
   removeMcp(profile: string, name: string) { return this.req("DELETE", this.p(profile, `/mcp/${enc(name)}`)); }
 
   async jobs(profile: string) { return (await this.req<{ jobs: BridgeJob[] }>("GET", this.p(profile, "/jobs"))).jobs ?? []; }
-  workers(profile: string) { return this.req<import("./workers").WorkerSnapshot>("GET", this.p(profile, "/workers")); }
+  workers(profile: string, signal?: AbortSignal) { return this.req<import("./workers").WorkerSnapshot>("GET", this.p(profile, "/workers"), undefined, signal); }
   jobAction(profile: string, id: string, action: "pause" | "resume" | "trigger") { return this.req("POST", this.p(profile, `/jobs/${enc(id)}/${action}`), {}); }
 
   async skills(profile: string) { return (await this.req<{ skills: BridgeSkill[] }>("GET", this.p(profile, "/skills"))).skills ?? []; }
