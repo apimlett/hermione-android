@@ -1,7 +1,7 @@
 // Per-bot settings: look, persona, model, toolsets, skills, and links to memory, MCP, plugins,
 // routines and older sessions. Live mode edits only what Hermes's HTTP API allows.
 import { router, useLocalSearchParams } from "expo-router";
-import { Activity, BellOff, Blocks, Brain, CalendarClock, History, KeyRound, Phone, Plug, Trash2, Star } from "lucide-react-native";
+import { Activity, BellOff, Blocks, Brain, CalendarClock, Cpu, Database, History, KeyRound, MessageSquare, Phone, Plug, Trash2, Star, Wrench } from "lucide-react-native";
 import { setBotNotify, usePrefs } from "../../src/prefs";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -11,10 +11,10 @@ import type { Bot } from "../../src/backend";
 import { AppearancePicker, useCheer } from "../../src/ui/appearance-picker";
 import { KEY_WARNING, useSetupChat } from "../../src/ui/setup-chat";
 import { useLoad } from "../../src/use-load";
-import { Avatar, Button, TapFace, ComingSoon, ErrorText, Field, Row, Screen, Section, Toggle } from "../../src/ui/kit";
+import { Button, TapFace, ComingSoon, ErrorText, Field, Row, Screen, Section, StatusChip, Toggle, botStatus } from "../../src/ui/kit";
 import { ModelPicker } from "../../src/ui/model-picker";
 import { SkeletonRows } from "../../src/ui/motion";
-import { colors, type } from "../../src/ui/theme";
+import { colors, radii, type } from "../../src/ui/theme";
 
 const fmt = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n));
 
@@ -57,17 +57,29 @@ export default function BotInfo() {
     await backend!.updateBot(draft!); await reloadBots(); fire();
   }
   return (
-    <Screen title={bot.name} subtitle={`Hermes profile · ${bot.profile}`}>
-      <View style={{ alignItems: "center", gap: 10 }}>
-        <TapFace bot={draft} size={104} mood={cheer ? "success" : liveMood} label={`${bot.name}'s face`} />
+    <Screen eyebrow={primaryId === bot.id ? "Main agent" : "Agent"} title={bot.name} subtitle={`Hermes profile · ${bot.profile}`}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
+        <View style={{ padding: 14, backgroundColor: colors.surfaceAlt, borderRadius: radii.avatar }}>
+          <TapFace bot={draft} size={96} mood={cheer ? "success" : liveMood} label={`${bot.name}'s face`} />
+        </View>
+        <View style={{ flex: 1, gap: 8 }}>
+          <StatusChip {...botStatus(liveMood, { needsKey: bot.needsKey })} />
+          {bot.description ? <Text style={[type.bodySm, { color: colors.muted }]} numberOfLines={3}>{bot.description}</Text> : null}
+        </View>
       </View>
-      <Section footer="The primary bot sits big at the top of Home. You can also long-press any bot there.">
-        <Row icon={<Star size={18} color={colors.star} fill={primaryId === bot.id ? colors.star : "transparent"} />} title="Primary bot"
-          detail={primaryId === bot.id ? "This bot is on top" : "Show this bot on top"} last
+      <Button arrow title={`Chat with ${bot.name}`} icon={<MessageSquare size={20} color={colors.onCoral} />} onPress={() => router.dismissTo(`/bot/${encodeURIComponent(bot.id)}`)} />
+      <Section>
+        <Row icon={<Cpu size={18} color={colors.text} />} title="Model" detail={bot.model ?? "Same as main"} />
+        <Row icon={<Wrench size={18} color={colors.text} />} title="Tools" detail={toolsets.data ? (toolsets.data.filter((t) => t.enabled).map((t) => t.label).join(", ") || "None") : toolsets.loading ? "Loading…" : "—"} />
+        <Row icon={<Database size={18} color={colors.text} />} title="Hermes profile" last detail={bot.profile} />
+      </Section>
+      <Section footer="The main agent sits at the top of Home. You can also long-press any bot there.">
+        <Row icon={<Star size={18} color={colors.coral} fill={primaryId === bot.id ? colors.coral : "transparent"} />} title="Main agent"
+          detail={primaryId === bot.id ? "This bot is on top of Home" : "Show this bot on top of Home"} last
           right={<Toggle value={primaryId === bot.id} disabled={primaryId === bot.id} onChange={(v) => { if (v) void setPrimary(bot.id); }} />} />
       </Section>
       <Section title="Appearance" footer={backend.kind === "live" ? "Saved on this phone right away. Hermes never sees it." : "Saved right away."}>
-        <View style={{ padding: 12 }}><AppearancePicker look={draft} onPick={(p) => void pickLook(p)} /></View>
+        <View style={{ paddingVertical: 12 }}><AppearancePicker look={draft} onPick={(p) => void pickLook(p)} /></View>
       </Section>
       <Field label="Name" value={draft.name} onChangeText={(name) => setDraft({ ...draft, name })} />
       <Field label="Short description" value={draft.description} onChangeText={(description) => setDraft({ ...draft, description })} />
@@ -92,7 +104,7 @@ export default function BotInfo() {
             right={<Toggle value={t.enabled} disabled={!canToggle} onChange={async (v) => { await backend.setToolset(bot, t.name, v); void toolsets.reload(); }} />} />
         ))}
         {toolsets.loading && !toolsets.data ? <SkeletonRows /> : null}
-        {toolsets.error ? <View style={{ padding: 12 }}><ErrorText error={toolsets.error} /></View> : null}
+        {toolsets.error ? <View style={{ paddingVertical: 12 }}><ErrorText error={toolsets.error} /></View> : null}
       </Section>
 
       <Section title="Skills" footer={canSkills ? "Turned-off skills stay installed; this bot just won't use them." : undefined}>
@@ -102,10 +114,10 @@ export default function BotInfo() {
             try { await backend.setSkill!(bot, s.name, v); } catch (e: any) { setSkillError(String(e?.message ?? e)); }
             void skills.reload();
           }} /> : undefined} />)}
-        {skillError ? <View style={{ padding: 12 }}><ErrorText error={skillError} /></View> : null}
-        {skills.data?.length === 0 ? <View style={{ padding: 14 }}><Text style={type.label}>No skills yet. {bot.name} learns them as it works.</Text></View> : null}
+        {skillError ? <View style={{ paddingVertical: 12 }}><ErrorText error={skillError} /></View> : null}
+        {skills.data?.length === 0 ? <View style={{ paddingVertical: 14 }}><Text style={type.label}>No skills yet. {bot.name} learns them as it works.</Text></View> : null}
         {skills.loading && !skills.data ? <SkeletonRows /> : null}
-        {skills.error ? <View style={{ padding: 12 }}><ErrorText error={skills.error} /></View> : null}
+        {skills.error ? <View style={{ paddingVertical: 12 }}><ErrorText error={skills.error} /></View> : null}
       </Section>
 
       {usage.data ? (
@@ -135,7 +147,7 @@ export default function BotInfo() {
         <Section title="Chat" footer={KEY_WARNING}>
           <Row icon={<KeyRound size={18} color={colors.accentText} />} title={setup.busy ? "Setting up…" : "Set up chat"} detail="Lets this phone chat with this profile" last
             onPress={setup.busy ? undefined : () => void setup.run(bot)} />
-          {setup.error ? <View style={{ padding: 12 }}><ErrorText error={setup.error} /></View> : null}
+          {setup.error ? <View style={{ paddingVertical: 12 }}><ErrorText error={setup.error} /></View> : null}
         </Section>
       ) : null}
       {bot.profile !== "default" && !fromServer ? (

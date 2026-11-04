@@ -21,7 +21,7 @@ function Expression({ mood, i }: { mood: FaceMood; i: number }) {
   const [poke, setPoke] = useState(0);
   return (
     <Pressable onPress={() => { tapHaptic(); setPoke((n) => n + 1); }} accessibilityRole="button" accessibilityLabel={`${mood} face`}
-      style={({ pressed }) => ({ width: "25%", alignItems: "center", gap: 8, paddingVertical: 12, borderRadius: 14, backgroundColor: pressed ? colors.control : "transparent" })}>
+      style={({ pressed }) => ({ width: "25%", alignItems: "center", gap: 8, paddingVertical: 12, borderRadius: 4, backgroundColor: pressed ? colors.surfaceAlt : "transparent" })}>
       <BotFace seed={`expr-${i}`} color={GRADIENTS[2].a} color2={GRADIENTS[2].b} shape="squircle" mood={mood} size={56} badge={false} poke={poke} />
       <Text style={[type.label, { textTransform: "capitalize" }]}>{mood}</Text>
     </Pressable>

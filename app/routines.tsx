@@ -77,8 +77,8 @@ export default function Routines() {
               </View>
             </View>
           ))}
-          {list.length === 0 && !e ? <View style={{ padding: 14 }}><Text style={type.label}>No routines yet. {bot.name} is free all week 🌴</Text></View> : null}
-          {e ? <View style={{ padding: 14 }}><ErrorText error={e} /></View> : null}
+          {list.length === 0 && !e ? <View style={{ paddingVertical: 14 }}><Text style={type.label}>No routines yet. {bot.name} is free all week 🌴</Text></View> : null}
+          {e ? <View style={{ paddingVertical: 14 }}><ErrorText error={e} /></View> : null}
         </Section>
       ))}
       {jobs.loading && !jobs.data ? <SkeletonRows rows={4} /> : null}
@@ -86,7 +86,7 @@ export default function Routines() {
       {jobs.data && !onlyFailed && groups.every((g) => !g.jobs.length) ? <Empty emoji="⏰" title="Nothing scheduled" body="Routines are Hermes cron jobs. Add one below and its results land in the bot's chat." /> : null}
       {target ? (
         <Section title={editing ? `Edit routine · ${target.emoji} ${target.name}` : `New routine for ${target.emoji} ${target.name}`}>
-          <View style={{ padding: 12, gap: 12 }}>
+          <View style={{ paddingVertical: 12, gap: 12 }}>
             <Field label="Name" placeholder="Morning brief" value={form.name} onChangeText={(name) => setForm({ ...form, name })} />
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {PRESETS.map(([label, cron]) => <Chip key={cron} label={label} selected={form.schedule === cron} onPress={() => setForm({ ...form, schedule: cron })} />)}
@@ -111,7 +111,7 @@ export default function Routines() {
 function IconAction({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { tapHaptic(); onPress(); }} hitSlop={2}
-      style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: pressed ? colors.controlActive : "transparent" })}>
+      style={({ pressed }) => ({ width: 48, height: 48, borderRadius: 4, alignItems: "center", justifyContent: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent" })}>
       {children}
     </Pressable>
   );

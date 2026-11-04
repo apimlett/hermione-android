@@ -1,77 +1,112 @@
-// Design tokens for Hermes Mobile: a dark canvas, warm accent, neutral text and Inter type. Spacing is on a 4-point grid.
+// Design tokens: Hermione DS v0.2, "Swiss Civic / Coral Parchment" (../Hermione-DS-v0.2/tokens).
+// Warm parchment canvas, charcoal ink, coral for titles, active states, primary actions and key
+// metrics. Flat surfaces, 1px rules, square-ish 4dp corners. Coral is never a status colour: run
+// states keep their own colours and always come with a word.
+//
+// Contrast (WCAG 2.x, on canvas #F4F0E6): coral #FF4438 is 3.0:1, so it is used only for large text
+// (display titles, metrics, 18dp+ bold button labels) and fills. Small coral text uses `coralText`
+// (5.0:1). Status dots use the DS status colours; status *text* uses the darker `*Text` variants.
+import { Platform } from "react-native";
 
 const light = {
-  canvas: "#fffaf2", surface: "#ffffff", floating: "#fffdf9", control: "#f4efe7", controlActive: "#eae1f5",
-  border: "#e8e0d5", borderStrong: "#d8cdbf", text: "#171525", textSecondary: "#48465a", muted: "#6f6b7d", dim: "#777386",
-  accentText: "#98520c", action: "#c16b1b", actionForeground: "#ffffff", star: "#d58a16", danger: "#c83d42", success: "#159b72", warning: "#a46600",
-  userBubble: "#dbead4", botBubble: "#ffffff", approvalSurface: "#fff6e8", approvalDetail: "#ffffff", approvalIcon: "rgba(246,200,96,0.24)", scrim: "rgba(15,12,25,0.48)",
+  // DS colour tokens
+  canvas: "#F4F0E6", surface: "#FBF8F0", surfaceAlt: "#EAE5DB",
+  ink: "#181818", inkMuted: "#66645F",
+  coral: "#FF4438", coralPressed: "#DE332A", onCoral: "#FFFFFF", coralText: "#C42B21",
+  rule: "#C9C5BA", ruleStrong: "#8E8B83", focus: "#2455A4",
+  ready: "#32986B", running: "#E4B600", waiting: "#D48427", failed: "#C93F40", offline: "#6C7C8B",
+  readyText: "#1F7A52", runningText: "#7A6200", waitingText: "#9A5A12", failedText: "#A8302F", offlineText: "#536170",
+  // App roles, mapped onto the DS tokens (screens use these names)
+  floating: "#FBF8F0", control: "#EAE5DB", controlActive: "#DED8CB",
+  border: "#C9C5BA", borderStrong: "#8E8B83", text: "#181818", textSecondary: "#3B3A37", muted: "#66645F", dim: "#66645F",
+  accentText: "#C42B21", action: "#FF4438", actionForeground: "#FFFFFF", star: "#D48427",
+  danger: "#A8302F", success: "#1F7A52", warning: "#9A5A12",
+  userBubble: "#EAE5DB", botBubble: "#FBF8F0", approvalSurface: "#FBF3E4", approvalDetail: "#FBF8F0", approvalIcon: "rgba(212,132,39,0.16)", scrim: "rgba(24,24,24,0.45)",
 };
-const dark = {
-  canvas: "#09090b",          // screen background
-  surface: "#131316",         // cards, assistant replies
-  floating: "#1b1b1f",        // headers and sheets that float over the canvas
-  control: "#1f1f24",         // inputs, chips, code blocks
-  controlActive: "#2b2b31",   // pressed / selected controls
-  border: "#24242a",
-  borderStrong: "#383840",
-  text: "#f2f2f4",
-  textSecondary: "#c4c4ca",
-  muted: "#9696a0",
-  dim: "#7c7c86",              // timestamps, hints (4.5:1 on canvas)
-  accentText: "#f0b35b",      // links and tappable text
-  action: "#e79a3c",          // send button and primary buttons
-  actionForeground: "#211407",
-  star: "#f0b35b",
-  danger: "#ff6464",
-  success: "#46d27f",
-  warning: "#f0b35b",
-  userBubble: "#222227",
-  botBubble: "#131316",
-  approvalSurface: "#1d1912",
-  approvalDetail: "#09090b",
-  approvalIcon: "rgba(246,200,96,0.14)",
-  scrim: "rgba(0,0,0,0.62)",
+
+// The DS is a light direction. Dark keeps the same civic system on charcoal for people who ask for it.
+const dark: typeof light = {
+  canvas: "#141413", surface: "#1D1C1A", surfaceAlt: "#262522",
+  ink: "#F4F0E6", inkMuted: "#A9A59B",
+  coral: "#FF5A4F", coralPressed: "#E8483D", onCoral: "#FFFFFF", coralText: "#FF6B5F",
+  rule: "#3A3833", ruleStrong: "#5E5B54", focus: "#7FA6E8",
+  ready: "#4CC38A", running: "#E4B600", waiting: "#F0A04B", failed: "#F07070", offline: "#93A3B2",
+  readyText: "#4CC38A", runningText: "#E4B600", waitingText: "#F0A04B", failedText: "#F07070", offlineText: "#93A3B2",
+  floating: "#1D1C1A", control: "#262522", controlActive: "#302E2A",
+  border: "#3A3833", borderStrong: "#5E5B54", text: "#F4F0E6", textSecondary: "#D2CEC4", muted: "#A9A59B", dim: "#A9A59B",
+  accentText: "#FF6B5F", action: "#FF4438", actionForeground: "#FFFFFF", star: "#F0A04B",
+  danger: "#F07070", success: "#4CC38A", warning: "#F0A04B",
+  userBubble: "#262522", botBubble: "#1D1C1A", approvalSurface: "#231E16", approvalDetail: "#141413", approvalIcon: "rgba(240,160,75,0.16)", scrim: "rgba(0,0,0,0.62)",
 };
-export const colors = { ...dark };
+
+export const colors = { ...light };
 export function setTheme(mode: "light" | "dark") {
   Object.assign(colors, mode === "light" ? light : dark);
   for (const style of Object.values(type)) (style as { color: string }).color = colors.text;
   type.label.color = colors.muted;
   type.bodySm.color = colors.textSecondary;
   type.caption.color = colors.dim;
+  type.eyebrow.color = colors.muted;
+  type.civic.color = colors.coral;
+  type.hero.color = colors.coral;
+  type.metric.color = colors.coral;
 }
 
-export const radii = { bubble: 22, pill: 26, card: 18, inset: 12, chip: 999 } as const;
+/** Square-ish, flat. Only the bot avatars stay soft; pills are reserved for dots and switches. */
+export const radii = { bubble: 6, pill: 4, card: 4, inset: 4, chip: 4, avatar: 12, round: 999 } as const;
 
 /** n steps of the 4-point grid. */
 export const space = (n: number) => n * 4;
 
-/** Minimum touch target (Material/Apple guidance) for anything tappable. */
-export const hit = 44;
+/** Minimum touch target (DS layout.touchTarget). */
+export const hit = 48;
 
-/** Surfaces above the canvas: a soft shadow on Android (elevation) and iOS. */
+/** DS layout tokens. */
+export const layout = { gutter: 20, bottomNav: 64, rule: 1 } as const;
+
+/** Minimal elevation: rules do the separating. Only sheets and toasts float. */
 export const elevation = {
-  raised: { elevation: 2, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  floating: { elevation: 8, shadowColor: "#000", shadowOpacity: 0.35, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
+  raised: { elevation: 0, shadowOpacity: 0 },
+  floating: { elevation: 6, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
 };
 
 /** Durations for the few UI motions: short and calm, never bouncy. */
 export const motion = { fast: 140, base: 200, slow: 260 } as const;
 
-export const font = {
-  regular: "Inter-Regular",
-  medium: "Inter-Medium",
-  semibold: "Inter-SemiBold",
+// Roboto Condensed / Roboto / Roboto Mono, from the platform (no font binaries are bundled).
+// Android's system families carry the weight in the name; the web preview falls back to CSS stacks.
+export const font = Platform.OS === "android" ? {
+  regular: "sans-serif",
+  medium: "sans-serif-medium",
+  semibold: "sans-serif-medium",
+  display: "sans-serif-condensed",
   mono: "monospace",
+} : {
+  regular: "Roboto, Arial, sans-serif",
+  medium: "Roboto, Arial, sans-serif",
+  semibold: "Roboto, Arial, sans-serif",
+  display: "'Roboto Condensed', 'Arial Narrow', sans-serif-condensed, sans-serif",
+  mono: "'Roboto Mono', monospace",
 };
 
+/** Medium weight for the web preview only; on Android the weight is in the family name. */
+export const medium = Platform.OS === "android" ? {} : { fontWeight: "500" as const };
+
 export const type = {
-  display: { fontFamily: font.semibold, fontSize: 26, lineHeight: 32, letterSpacing: -0.4, color: colors.text },
-  h: { fontFamily: font.semibold, fontSize: 19, lineHeight: 26, letterSpacing: -0.2, color: colors.text },
-  title: { fontFamily: font.semibold, fontSize: 17, lineHeight: 23, letterSpacing: -0.1, color: colors.text },
-  chat: { fontFamily: font.regular, fontSize: 16.5, lineHeight: 25, color: colors.text },
+  /** Masthead: oversized condensed coral (HERMIONE). */
+  hero: { fontFamily: font.display, fontWeight: "700" as const, fontSize: 48, lineHeight: 48, letterSpacing: -0.5, textTransform: "uppercase" as const, color: colors.coral },
+  /** Screen titles: condensed coral, uppercase. */
+  civic: { fontFamily: font.display, fontWeight: "700" as const, fontSize: 32, lineHeight: 34, letterSpacing: -0.2, textTransform: "uppercase" as const, color: colors.coral },
+  /** Huge metric numbers. */
+  metric: { fontFamily: font.display, fontWeight: "700" as const, fontSize: 56, lineHeight: 58, color: colors.coral },
+  /** Mono uppercase technical label with generous tracking. */
+  eyebrow: { fontFamily: font.mono, fontSize: 11, lineHeight: 15, letterSpacing: 1.6, textTransform: "uppercase" as const, color: colors.muted },
+  display: { fontFamily: font.display, fontWeight: "700" as const, fontSize: 26, lineHeight: 30, color: colors.text },
+  h: { fontFamily: font.display, fontWeight: "700" as const, fontSize: 22, lineHeight: 26, color: colors.text },
+  title: { fontFamily: font.semibold, ...medium, fontSize: 17, lineHeight: 23, color: colors.text },
+  chat: { fontFamily: font.regular, fontSize: 16, lineHeight: 24, color: colors.text },
   body: { fontFamily: font.regular, fontSize: 15, lineHeight: 21, color: colors.text },
-  bodySm: { fontFamily: font.regular, fontSize: 13.5, lineHeight: 19, color: colors.textSecondary },
+  bodySm: { fontFamily: font.regular, fontSize: 14, lineHeight: 19, color: colors.textSecondary },
   label: { fontFamily: font.medium, fontSize: 12.5, lineHeight: 17, color: colors.muted },
   caption: { fontFamily: font.regular, fontSize: 12, lineHeight: 16, color: colors.dim },
 };

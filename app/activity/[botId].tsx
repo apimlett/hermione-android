@@ -10,11 +10,14 @@ import { Empty, ErrorText, Row, Screen, Section, Toggle } from "../../src/ui/kit
 import { SkeletonRows } from "../../src/ui/motion";
 import { colors } from "../../src/ui/theme";
 import { useLoad } from "../../src/use-load";
+import { useWorkers } from "../../src/worker-monitor";
+import { WorkerPanel } from "../../src/ui/worker-panel";
 
 export default function ActivityScreen() {
-  const { botId } = useLocalSearchParams<{ botId: string }>();
+  const { botId, worker } = useLocalSearchParams<{ botId: string; worker?: string }>();
   const bot = useBot(botId);
   const { backend } = useApp();
+  const workers = useWorkers(bot?.profile ?? "");
   const raw = useLoad(bot && backend && !bot.needsKey ? async () => backend.chat(bot).messages(await backend.botChatSession(bot)) : null, [bot?.id, backend]);
   const mcp = useLoad(bot && backend ? () => backend.listMcp(bot) : null, [bot?.id, backend]);
   const toolsets = useLoad(bot && backend ? () => backend.listToolsets(bot) : null, [bot?.id, backend]);
@@ -24,6 +27,7 @@ export default function ActivityScreen() {
   const canToggle = backend.supports("toggleToolsets");
   return (
     <Screen title="Activity" subtitle={`${bot.emoji ?? ""} ${bot.name}`}>
+      {backend.kind === "live" ? <WorkerPanel bot={bot} snapshot={workers} focus={worker} /> : null}
       {plan?.length ? (
         <Section title="Current plan" footer="Hermes's own to-do list for this chat (its todo tool).">
           {plan.map((p, i) => (
@@ -44,7 +48,7 @@ export default function ActivityScreen() {
             right={<Toggle value={t.enabled} disabled={!canToggle} onChange={async (v) => { await backend.setToolset(bot, t.name, v); void toolsets.reload(); }} />} />
         ))}
         {(mcp.loading && !mcp.data) || (toolsets.loading && !toolsets.data) ? <SkeletonRows rows={2} /> : null}
-        <View style={{ paddingHorizontal: 12 }}><ErrorText error={mcp.error ?? toolsets.error} /></View>
+        <View><ErrorText error={mcp.error ?? toolsets.error} /></View>
       </Section>
 
       <Section title="Timeline" footer="Tool calls in this bot's main chat, newest first.">

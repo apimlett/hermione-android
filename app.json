@@ -6,8 +6,8 @@
     "version": "0.1.1",
     "updates": { "enabled": false },
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#09090b",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#F4F0E6",
     "android": {
       "package": "com.example.hermione.poc",
       "adaptiveIcon": {
@@ -53,16 +53,20 @@
       [
         "expo-notifications",
         {
-          "color": "#09090b"
+          "color": "#FF4438"
         }
       ],
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 96,
+          "image": "./assets/splash-hermione.png",
+          "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#09090b"
+          "backgroundColor": "#F4F0E6",
+          "dark": {
+            "image": "./assets/splash-hermione-dark.png",
+            "backgroundColor": "#141413"
+          }
         }
       ]
     ],

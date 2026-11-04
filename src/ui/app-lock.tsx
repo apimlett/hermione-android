@@ -36,9 +36,9 @@ export function AppLock() {
   return (
     <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: colors.canvas, alignItems: "center", justifyContent: "center", gap: 18 }}>
       <Lock size={36} color={colors.muted} />
-      <Text style={type.title}>Hermes is locked</Text>
-      <Pressable onPress={() => void unlock()} accessibilityRole="button" style={{ backgroundColor: colors.action, borderRadius: radii.chip, paddingHorizontal: 28, paddingVertical: 12 }}>
-        <Text style={{ fontFamily: font.semibold, fontSize: 16, color: colors.actionForeground }}>Unlock</Text>
+      <Text accessibilityRole="header" style={type.civic}>Locked</Text>
+      <Pressable onPress={() => void unlock()} accessibilityRole="button" style={({ pressed }) => ({ backgroundColor: pressed ? colors.coralPressed : colors.coral, borderRadius: radii.inset, minHeight: 52, justifyContent: "center", paddingHorizontal: 32 })}>
+        <Text style={{ fontFamily: font.display, fontWeight: "700", fontSize: 19, textTransform: "uppercase", color: colors.onCoral }}>Unlock</Text>
       </Pressable>
     </View>
   );

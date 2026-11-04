@@ -32,7 +32,7 @@ export default function HistoryScreen() {
               title={s.title === BOT_CHAT_TITLE ? "Bot Chat (main)" : s.title} detail={s.updated ? String(s.updated) : undefined}
               onPress={s.title === BOT_CHAT_TITLE || !backend.updateSession ? undefined : () => setEdit(edit?.id === s.id ? null : { id: s.id, title: s.title })} />
             {edit?.id === s.id ? (
-              <View style={{ padding: 12, gap: 10 }}>
+              <View style={{ paddingVertical: 12, gap: 10 }}>
                 <Field label="Title" value={edit.title} onChangeText={(t) => setEdit({ ...edit, title: t })} />
                 <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
                   <View style={{ flex: 1 }}><Button title="Rename" disabled={!edit.title.trim()} onPress={() => act(async () => { await backend.updateSession!(bot, s.id, { title: edit.title.trim() }); setEdit(null); })} /></View>
@@ -49,7 +49,7 @@ export default function HistoryScreen() {
       {sessions.data && !list.length ? <Empty emoji="🗂️" title="Nothing else yet" body="Routine runs and side topics will show up here." /> : null}
       {backend.createTopic ? (
         <Section title="New topic">
-          <View style={{ padding: 12, gap: 10 }}>
+          <View style={{ paddingVertical: 12, gap: 10 }}>
             <Field label="Topic name" placeholder="Trip to Trichy" value={title} onChangeText={setTitle} />
             <Button title="Create topic" disabled={!title.trim()} onPress={() => act(async () => { await backend.createTopic!(bot, title.trim()); setTitle(""); })} />
           </View>

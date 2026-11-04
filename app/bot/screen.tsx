@@ -25,10 +25,10 @@ import { ChatSkeleton, DayDivider, EmptyChat, Header, JumpButton, RowBoundary, T
 
 const AWAY = 320;
 function SearchBar({ query, setQuery, position, onNext, onPrev, onClose }: { query: string; setQuery: (q: string) => void; position: [number, number]; onNext: () => void; onPrev: () => void; onClose: () => void }) {
-  const circle = { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.control } as const;
+  const circle = { width: 40, height: 40, borderRadius: radii.inset, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceAlt } as const;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingBottom: 8 }}>
-      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8, height: 40, paddingHorizontal: 12, borderRadius: 20, backgroundColor: colors.floating, borderWidth: 1, borderColor: colors.border }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingTop: 4, paddingBottom: 8, backgroundColor: colors.canvas, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
+      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8, height: 44, paddingHorizontal: 12, borderRadius: radii.inset, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.rule }}>
         <Search size={16} color={colors.muted} />
         <TextInput value={query} onChangeText={setQuery} placeholder="Search this chat" placeholderTextColor={colors.muted} accessibilityLabel="Search this chat" style={{ flex: 1, color: colors.text, fontSize: 15, paddingVertical: 0 }} />
         {query ? <Text style={[type.label, { color: colors.muted }]}>{position[0]}/{position[1]}</Text> : null}

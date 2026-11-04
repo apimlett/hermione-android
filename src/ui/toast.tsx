@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createStore, useStore } from "../store";
 import { useReduceMotion } from "./live-surface";
 import { DUR } from "./motion-tokens";
-import { colors, elevation, font } from "./theme";
+import { colors, elevation, font, radii } from "./theme";
 
 type Toast = { id: number; text: string; kind: "ok" | "error" } | null;
 const store = createStore<Toast>(null);
@@ -40,8 +40,8 @@ export function ToastHost() {
   const Icon = shown.kind === "ok" ? Check : CircleAlert;
   return (
     <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: insets.bottom + 96, alignItems: "center" }}>
-      <Reanimated.View accessibilityLiveRegion="polite" style={[{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999,
-        backgroundColor: colors.floating, borderWidth: 1, borderColor: colors.borderStrong, ...elevation.floating }, style]}>
+      <Reanimated.View accessibilityLiveRegion="polite" style={[{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: radii.inset,
+        backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.text, ...elevation.floating }, style]}>
         <Icon size={16} color={shown.kind === "ok" ? colors.success : colors.danger} />
         <Text style={{ fontFamily: font.medium, fontSize: 14, color: colors.text }}>{shown.text}</Text>
       </Reanimated.View>

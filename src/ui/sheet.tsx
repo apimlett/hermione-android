@@ -41,9 +41,9 @@ export function Sheet({ visible, onClose, title, children }: { visible: boolean;
           <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
         </Reanimated.View>
         <Reanimated.View style={panel} onLayout={(e) => { height.value = e.nativeEvent.layout.height + 24; }}>
-          <View accessibilityViewIsModal style={{ backgroundColor: colors.control, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 10, paddingBottom: insets.bottom + 12 }}>
+          <View accessibilityViewIsModal style={{ backgroundColor: colors.canvas, borderTopLeftRadius: 4, borderTopRightRadius: 4, borderTopWidth: 1, borderColor: colors.text, paddingTop: 10, paddingBottom: insets.bottom + 12 }}>
             <View style={{ alignSelf: "center", width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderStrong, marginBottom: title ? 10 : 14 }} />
-            {title ? <Text accessibilityRole="header" style={[type.label, { paddingHorizontal: 20, paddingBottom: 6, letterSpacing: 0.4 }]}>{title.toUpperCase()}</Text> : null}
+            {title ? <Text accessibilityRole="header" style={[type.eyebrow, { paddingHorizontal: 20, paddingBottom: 6 }]}>{title}</Text> : null}
             <View style={{ paddingHorizontal: title ? 6 : 0 }}>{visible ? children : last.current}</View>
           </View>
         </Reanimated.View>
@@ -55,7 +55,7 @@ export function Sheet({ visible, onClose, title, children }: { visible: boolean;
 export function SheetRow({ icon, label, detail, onPress }: { icon: ReactNode; label: string; detail?: string; onPress?: () => void }) {
   return (
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={label}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 52, paddingHorizontal: 20, paddingVertical: 12, backgroundColor: pressed ? colors.controlActive : "transparent" })}>
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 52, paddingHorizontal: 20, paddingVertical: 12, backgroundColor: pressed ? colors.surfaceAlt : "transparent" })}>
       {icon}
       <View style={{ flex: 1 }}>
         <Text style={[type.body, { color: onPress ? colors.text : colors.muted }]}>{label}</Text>
