@@ -76,8 +76,16 @@ export async function sendTestNotification(): Promise<NotifStatus> {
 export const openNotificationSettings = () => { void Linking.openSettings().catch(() => {}); };
 
 async function post(content: Notifications.NotificationContentInput, id?: string) {
-  if (!(await ensureNotifications())) return;
-  try { await Notifications.scheduleNotificationAsync({ identifier: id, content, trigger: { channelId: CHANNEL } as any }); } catch {}
+  if (!(await ensureNotifications())) return false;
+  try { await Notifications.scheduleNotificationAsync({ identifier: id, content, trigger: { channelId: CHANNEL } as any }); return true; } catch { return false; }
+}
+
+/** Local JS only. Fixed safe text, no raw worker goal/output and no approval action. */
+export async function notifyWorker(bot: Bot, worker: import("./workers").Worker): Promise<boolean> {
+  const p = getPrefs();
+  if (!worker.eventId || worker.state === "running" || !shouldNotify(p, bot.id, worker.state === "completed" ? "reply" : "error")) return false;
+  return post({ title: bot.name, body: `Delegated task ${worker.taskIndex + 1}: ${worker.state}. Parent review unknown.`,
+    data: { botId: bot.id, workerId: worker.id } }, `worker-${bot.id}-${worker.eventId}`);
 }
 
 /** Respects Settings → Notifications and the bot's own switches (mute, kinds, quiet hours, hidden previews). */
@@ -94,7 +102,7 @@ export const notifyApproval = (bot: Bot, turnId: string, a: Approval) => {
     categoryIdentifier: APPROVAL, data: { botId: bot.id, turnId, approval: true } }, `approval-${bot.id}-${turnId}`);
 };
 
-export type NotificationTap = { botId: string; turnId?: string; choice?: "once" | "deny" };
+export type NotificationTap = { botId: string; turnId?: string; workerId?: string; choice?: "once" | "deny" };
 
 /** Taps and button presses. `choice` is set when Allow once / Deny was pressed on an approval. */
 export function onNotificationTap(handle: (t: NotificationTap, dismiss: () => void) => void): () => void {
@@ -105,7 +113,7 @@ export function onNotificationTap(handle: (t: NotificationTap, dismiss: () => vo
     if (typeof d.botId !== "string") return;
     const choice = r.actionIdentifier === "once" || r.actionIdentifier === "deny" ? r.actionIdentifier : undefined;
     const id = r.notification.request.identifier;
-    handle({ botId: d.botId, turnId: d.turnId, choice }, () => { void Notifications.dismissNotificationAsync(id).catch(() => {}); });
+    handle({ botId: d.botId, turnId: d.turnId, workerId: typeof d.workerId === "string" ? d.workerId : undefined, choice }, () => { void Notifications.dismissNotificationAsync(id).catch(() => {}); });
     void Notifications.clearLastNotificationResponseAsync().catch(() => {});
   };
   try {
